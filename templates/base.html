@@ -164,10 +164,12 @@
             </a>
             {% endif %}
 
+            {% if current_property and user.is_investor or user.is_admin %}
             {% if current_property %}
             <a href="{% url 'subscriptions:status' property_id=current_property.id %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'subscriptions' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-crown w-6 text-sm text-amber-400"></i> Subscription
             </a>
+            {% endif %}
             {% endif %}
         </nav>
 

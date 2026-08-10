@@ -14,6 +14,10 @@ from .models import PropertySubscription, SubscriptionTransaction
 
 @login_required
 def subscription_status(request, property_id):
+    if not (request.user.is_admin or request.user.is_investor):
+        messages.error(request, "Subscription & License management is reserved for Property Owners and Platform Admins.")
+        return redirect('dashboard:index')
+
     prop = get_object_or_404(Property, id=property_id)
     subscription, created = PropertySubscription.objects.get_or_create(
         property=prop,

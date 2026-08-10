@@ -132,7 +132,14 @@ def booking_create(request):
 
 @login_required
 def booking_detail(request, booking_id):
+    prop = getattr(request, 'current_property', None)
     booking = get_object_or_404(Booking, id=booking_id)
+    
+    # Strict Tenant Isolation Check
+    if not request.user.is_admin and prop and booking.property != prop:
+        messages.error(request, "Permission denied for this property record.")
+        return redirect('dashboard:index')
+
     invoice = getattr(booking, 'invoice', None)
     transactions = booking.transactions.all().order_by('-timestamp')
     receipts = booking.receipts.all().order_by('-created_at')
@@ -157,17 +164,17 @@ def quick_check_in(request, booking_id=None):
         initial_payment = Decimal(request.POST.get('initial_payment', '0.00'))
         payment_method = request.POST.get('payment_method', 'cash')
 
-        room = get_object_or_404(Room, id=room_id, property=prop)
-        guest = get_object_or_404(Guest, id=guest_id)
-
         today = date.today()
         check_out_date = today + timedelta(days=num_nights)
 
-        if Booking.check_overlap(room, today, check_out_date):
-            messages.error(request, f"Room {room.room_number} is not available for check-in today.")
-            return redirect('dashboard:index')
-
         with transaction.atomic():
+            room = Room.objects.select_for_update().get(id=room_id, property=prop)
+            guest = get_object_or_404(Guest, id=guest_id)
+
+            if Booking.check_overlap(room, today, check_out_date):
+                messages.error(request, f"Room {room.room_number} is not available for check-in today.")
+                return redirect('dashboard:index')
+
             booking = Booking.objects.create(
                 property=prop,
                 room=room,

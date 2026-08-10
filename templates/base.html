@@ -63,10 +63,12 @@
                     {% if current_property %}
                         {% if current_property.investor and not current_property.investor.is_active %}
                         <span class="inline-block text-[10px] text-rose-400 font-extrabold"><i class="fa-solid fa-user-slash mr-1"></i>Investor Deactivated</span>
-                        {% elif current_property.subscription and current_property.subscription.is_expired %}
-                        <span class="inline-block text-[10px] text-red-400 font-semibold"><i class="fa-solid fa-circle-exclamation mr-1"></i>Expired</span>
+                        {% elif current_property.subscription and not current_property.subscription.is_active %}
+                        <span class="inline-block text-[10px] text-rose-400 font-bold"><i class="fa-solid fa-circle-exclamation mr-1"></i>Suspended / Expired</span>
+                        {% elif current_property.subscription and current_property.subscription.is_trial %}
+                        <span class="inline-block text-[10px] text-amber-400 font-semibold"><i class="fa-solid fa-gift mr-1"></i>Free Trial</span>
                         {% elif current_property.subscription %}
-                        <span class="inline-block text-[10px] text-emerald-400 font-semibold"><i class="fa-solid fa-shield-check mr-1"></i>Trial ({{ current_property.subscription.days_remaining }}d)</span>
+                        <span class="inline-block text-[10px] text-emerald-400 font-semibold"><i class="fa-solid fa-shield-check mr-1"></i>Active License ({{ current_property.subscription.days_remaining }}d)</span>
                         {% endif %}
                     {% endif %}
                 </div>
@@ -87,6 +89,8 @@
                         <div>{{ p.property_name }}</div>
                         {% if p.investor and not p.investor.is_active %}
                         <span class="text-[9px] text-rose-400 font-extrabold block">● Inactive (Owner Deactivated)</span>
+                        {% elif p.subscription and not p.subscription.is_active %}
+                        <span class="text-[9px] text-rose-400 font-bold block">● Suspended Subscription</span>
                         {% elif p.subscription and p.subscription.is_expired %}
                         <span class="text-[9px] text-amber-400 font-bold block">● Expired Subscription</span>
                         {% else %}

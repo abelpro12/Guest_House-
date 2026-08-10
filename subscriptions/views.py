@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.conf import settings
 from django.utils import timezone
-from datetime import timedelta, date
+from datetime import datetime, timedelta, date
 from properties.models import Property
 from .models import PropertySubscription, SubscriptionTransaction
 
@@ -62,6 +62,16 @@ def admin_manage_subscription(request, subscription_id):
             sub.save()
             messages.success(request, f"Extended subscription for '{sub.property.property_name}' by {days} days! New Expiry: {sub.expiry_date}")
 
+        elif action == 'set_exact_dates':
+            start_str = request.POST.get('start_date')
+            expiry_str = request.POST.get('expiry_date')
+            if start_str and expiry_str:
+                sub.start_date = datetime.strptime(start_str, '%Y-%m-%d').date()
+                sub.expiry_date = datetime.strptime(expiry_str, '%Y-%m-%d').date()
+                sub.is_active = True
+                sub.save()
+                messages.success(request, f"Set exact subscription dates! Start: {sub.start_date}, Expiry: {sub.expiry_date}")
+
         elif action == 'update_fee':
             fee = Decimal(request.POST.get('subscription_fee', '5000.00'))
             sub.subscription_fee = fee
@@ -69,9 +79,21 @@ def admin_manage_subscription(request, subscription_id):
             messages.success(request, f"Updated subscription fee for '{sub.property.property_name}' to {fee} ETB.")
 
         elif action == 'toggle_active':
-            sub.is_active = not sub.is_active
+            was_active = sub.is_active
+            sub.is_active = not was_active
+            
+            # When reactivating a suspended subscription, update start date to today & preserve remaining days
+            if not was_active and sub.is_active:
+                today = date.today()
+                remaining = sub.days_remaining
+                sub.start_date = today
+                if remaining > 0:
+                    sub.expiry_date = today + timedelta(days=remaining)
+                else:
+                    sub.expiry_date = today + timedelta(days=30)
+            
             sub.save()
-            status_label = "Activated" if sub.is_active else "Suspended"
+            status_label = "Reactivated (Start date & remaining days updated)" if sub.is_active else "Suspended"
             messages.success(request, f"Subscription status for '{sub.property.property_name}' changed to {status_label}.")
 
         elif action == 'toggle_trial':

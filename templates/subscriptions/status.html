@@ -33,7 +33,7 @@
         {% endif %}
 
         <!-- Expiry Warning Alert -->
-        {% if subscription.days_remaining <= 30 %}
+        {% if not subscription.is_trial and subscription.days_remaining <= 30 %}
         <div class="p-4 rounded-xl bg-amber-950/40 border border-amber-800/60 text-xs text-amber-200 flex items-center space-x-3">
             <i class="fa-solid fa-triangle-exclamation text-amber-400 text-lg"></i>
             <div>
@@ -45,8 +45,15 @@
 
         <div class="space-y-3 text-xs bg-slate-800/40 p-5 rounded-xl border border-slate-800">
             <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-400">Start Date:</span> <span class="text-white font-bold">{{ subscription.start_date }}</span></div>
-            <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-400">Expiry Date:</span> <span class="text-white font-bold">{{ subscription.expiry_date }}</span></div>
-            <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-400">Billing Period:</span> <span class="text-indigo-400 font-bold uppercase">{{ subscription.get_billing_period_display }}</span></div>
+            <div class="flex justify-between py-1 border-b border-slate-800">
+                <span class="text-slate-400">Expiry Date / Status:</span> 
+                {% if subscription.is_trial %}
+                <span class="text-amber-400 font-bold"><i class="fa-solid fa-gift mr-1"></i>Free Trial (No Expiration Date)</span>
+                {% else %}
+                <span class="text-white font-bold">{{ subscription.expiry_date }} ({{ subscription.days_remaining }} days remaining)</span>
+                {% endif %}
+            </div>
+            <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-400">Billing Period:</span> <span class="text-indigo-400 font-bold uppercase">{% if subscription.is_trial %}Free Trial{% else %}{{ subscription.get_billing_period_display }}{% endif %}</span></div>
             <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-400">Subscription Fee:</span> <span class="text-emerald-400 font-extrabold text-sm">{{ subscription.subscription_fee }} ETB</span></div>
             <div class="flex justify-between py-1"><span class="text-slate-400">Payment Gateway:</span> <span class="text-indigo-400 font-bold">Chapa (Telebirr, Cards, CBE)</span></div>
         </div>
@@ -108,7 +115,27 @@
                     </div>
                 </div>
 
-                <!-- Action 2: Edit Subscription Fee -->
+                <!-- Action 2: Custom Start & Expiry Dates -->
+                <div class="pt-3 border-t border-indigo-900/60">
+                    <label class="block font-bold text-slate-300 mb-1.5">Set Custom Start & Expiry Dates</label>
+                    <form method="POST" action="{% url 'subscriptions:admin_manage' subscription_id=subscription.id %}" class="flex flex-wrap items-center gap-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="set_exact_dates">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-[10px] text-slate-400">Start:</span>
+                            <input type="date" name="start_date" value="{{ subscription.start_date|date:'Y-m-d' }}" required class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white font-bold text-xs">
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <span class="text-[10px] text-slate-400">Expiry:</span>
+                            <input type="date" name="expiry_date" value="{{ subscription.expiry_date|date:'Y-m-d' }}" required class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-white font-bold text-xs">
+                        </div>
+                        <button type="submit" class="px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-lg shadow">
+                            Save Exact Dates
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Action 3: Edit Subscription Fee -->
                 <div class="pt-3 border-t border-indigo-900/60">
                     <label class="block font-bold text-slate-300 mb-1.5">Edit Property Subscription Fee (ETB)</label>
                     <form method="POST" action="{% url 'subscriptions:admin_manage' subscription_id=subscription.id %}" class="flex items-center space-x-2">

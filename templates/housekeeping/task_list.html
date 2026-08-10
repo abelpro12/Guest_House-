@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Housekeeping Tasks{% endblock %}
+{% block page_title %}Housekeeping & Room Cleaning Queue{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-white">Cleaning Queue</h3>
+        <a href="{% url 'housekeeping:create' %}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg">
+            + Schedule Room Cleaning
+        </a>
+    </div>
+
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
+                <tr>
+                    <th class="p-3">Room</th>
+                    <th class="p-3">Description</th>
+                    <th class="p-3">Priority</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3">Created</th>
+                    <th class="p-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800">
+                {% for task in tasks %}
+                <tr>
+                    <td class="p-3 font-extrabold text-white text-sm">#{{ task.room.room_number }}</td>
+                    <td class="p-3">{{ task.task_description }}</td>
+                    <td class="p-3 font-bold uppercase text-[10px]
+                        {% if task.priority == 'high' %}text-rose-400
+                        {% elif task.priority == 'medium' %}text-amber-400
+                        {% else %}text-slate-400{% endif %}">
+                        {{ task.get_priority_display }}
+                    </td>
+                    <td class="p-3">
+                        <span class="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase
+                            {% if task.status == 'completed' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
+                            {% elif task.status == 'in_progress' %}bg-indigo-500/20 text-indigo-400
+                            {% else %}bg-amber-500/20 text-amber-400{% endif %}">
+                            {{ task.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="p-3 text-slate-400">{{ task.created_at|date:"Y-m-d H:i" }}</td>
+                    <td class="p-3">
+                        {% if task.status != 'completed' %}
+                        <form action="{% url 'housekeeping:update_status' task_id=task.id %}" method="post" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="completed">
+                            <button type="submit" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[10px] shadow">
+                                Mark Room Ready (Vacant)
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="text-slate-500 text-[11px]"><i class="fa-solid fa-check text-emerald-400"></i> Complete</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="p-6 text-center text-slate-500">No housekeeping tasks pending.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

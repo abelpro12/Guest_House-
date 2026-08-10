@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Start Shift{% endblock %}
+{% block page_title %}Start Work Shift{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+    <h3 class="text-base font-bold text-white mb-4 border-b border-slate-800 pb-3">Open Cash Register</h3>
+
+    <form method="post" class="space-y-4 text-xs">
+        {% csrf_token %}
+
+        <div>
+            <label class="block font-semibold text-slate-300 mb-1">Opening Cash Amount in Drawer (ETB)</label>
+            <input type="number" step="0.01" name="opening_cash" value="0.00" required class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-bold text-sm">
+        </div>
+
+        <div class="pt-3 flex justify-end space-x-3">
+            <a href="{% url 'shifts:list' %}" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg font-semibold">Cancel</a>
+            <button type="submit" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg">Start Shift</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

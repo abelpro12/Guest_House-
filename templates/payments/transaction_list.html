@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Payments Ledger{% endblock %}
+{% block page_title %}Financial Payments & Transaction History{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
+                <tr>
+                    <th class="p-3">Tx Reference</th>
+                    <th class="p-3">Booking Ref</th>
+                    <th class="p-3">Date / Time</th>
+                    <th class="p-3">Payment Method</th>
+                    <th class="p-3">Amount (ETB)</th>
+                    <th class="p-3">Received By</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800">
+                {% for tx in transactions %}
+                <tr>
+                    <td class="p-3 font-mono text-indigo-400 font-bold">{{ tx.reference_id }}</td>
+                    <td class="p-3 font-mono text-slate-300">
+                        {% if tx.booking %}
+                        <a href="{% url 'bookings:detail' booking_id=tx.booking.id %}" class="hover:underline">{{ tx.booking.booking_reference }}</a>
+                        {% endif %}
+                    </td>
+                    <td class="p-3 text-slate-400">{{ tx.timestamp|date:"Y-m-d H:i" }}</td>
+                    <td class="p-3 font-semibold uppercase text-slate-200">{{ tx.get_payment_method_display }}</td>
+                    <td class="p-3 font-extrabold text-emerald-400 text-sm">{{ tx.amount }}</td>
+                    <td class="p-3">{{ tx.received_by.username|default:"Staff" }}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase
+                            {% if tx.transaction_status == 'completed' %}bg-emerald-500/20 text-emerald-400
+                            {% elif tx.transaction_status == 'voided' %}bg-rose-500/20 text-rose-400
+                            {% else %}bg-amber-500/20 text-amber-400{% endif %}">
+                            {{ tx.get_transaction_status_display }}
+                        </span>
+                    </td>
+                    <td class="p-3">
+                        {% if user.is_admin or user.is_investor %}
+                            {% if tx.transaction_status == 'completed' %}
+                            <form action="{% url 'payments:void' transaction_id=tx.id %}" method="post" onsubmit="return confirm('Are you sure you want to void this payment transaction? Audit log will be created.')" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="text-rose-400 hover:underline font-semibold">Void Tx</button>
+                            </form>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="p-6 text-center text-slate-500">No transactions recorded.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

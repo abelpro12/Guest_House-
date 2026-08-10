@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Close Shift{% endblock %}
+{% block page_title %}Close Shift & Cash Reconciliation{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl space-y-4">
+    <h3 class="text-base font-bold text-white border-b border-slate-800 pb-3">Reconcile Cash Drawer</h3>
+
+    <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700 text-xs space-y-2">
+        <div class="flex justify-between text-slate-400"><span>Opening Cash:</span> <span class="font-bold text-white">{{ shift.opening_cash }} ETB</span></div>
+        <div class="flex justify-between text-slate-400"><span>Calculated Expected Cash:</span> <span class="font-black text-indigo-400 text-sm">{{ expected_cash }} ETB</span></div>
+    </div>
+
+    <form action="{% url 'shifts:close' shift_id=shift.id %}" method="post" class="space-y-4 text-xs">
+        {% csrf_token %}
+
+        <div>
+            <label class="block font-semibold text-slate-300 mb-1">Actual Physical Cash Counted in Drawer (ETB)</label>
+            <input type="number" step="0.01" name="actual_cash" value="{{ expected_cash }}" required class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-extrabold text-sm">
+        </div>
+
+        <div class="pt-3 flex justify-end space-x-3">
+            <a href="{% url 'shifts:list' %}" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg font-semibold">Cancel</a>
+            <button type="submit" class="px-6 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-lg">Close Shift</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

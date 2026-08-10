@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Maintenance Tickets{% endblock %}
+{% block page_title %}Maintenance & Room Lockouts{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-white">Maintenance Log</h3>
+        <a href="{% url 'maintenance:create' %}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg">
+            + Report Maintenance Issue
+        </a>
+    </div>
+
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
+                <tr>
+                    <th class="p-3">Ticket #</th>
+                    <th class="p-3">Room</th>
+                    <th class="p-3">Problem Description</th>
+                    <th class="p-3">Priority</th>
+                    <th class="p-3">Est. Cost (ETB)</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800">
+                {% for ticket in tickets %}
+                <tr>
+                    <td class="p-3 font-mono font-bold text-indigo-400">#{{ ticket.id }}</td>
+                    <td class="p-3 font-extrabold text-white text-sm">#{{ ticket.room.room_number }}</td>
+                    <td class="p-3">{{ ticket.description }}</td>
+                    <td class="p-3 font-bold uppercase text-[10px]
+                        {% if ticket.priority == 'urgent' or ticket.priority == 'high' %}text-rose-400
+                        {% else %}text-amber-400{% endif %}">
+                        {{ ticket.get_priority_display }}
+                    </td>
+                    <td class="p-3 font-semibold">{{ ticket.cost }}</td>
+                    <td class="p-3">
+                        <span class="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase
+                            {% if ticket.status == 'resolved' or ticket.status == 'closed' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
+                            {% else %}bg-sky-500/20 text-sky-400 border border-sky-500/30{% endif %}">
+                            {{ ticket.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="p-3">
+                        {% if ticket.status != 'resolved' and ticket.status != 'closed' %}
+                        <form action="{% url 'maintenance:update_status' ticket_id=ticket.id %}" method="post" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="resolved">
+                            <button type="submit" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[10px] shadow">
+                                Resolve & Unlock Room
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="text-slate-500 text-[11px]"><i class="fa-solid fa-check text-emerald-400"></i> Resolved</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="p-6 text-center text-slate-500">No active maintenance issues.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

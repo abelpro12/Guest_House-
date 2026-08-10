@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}No Active Property Selected{% endblock %}
+{% block page_title %}Property Selection Required{% endblock %}
+
+{% block content %}
+<div class="min-h-[60vh] flex items-center justify-center">
+    <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-4 shadow-2xl">
+        <div class="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-3xl mx-auto border border-amber-500/30">
+            <i class="fa-solid fa-building-circle-exclamation"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white">No Active Property Assigned</h3>
+        <p class="text-xs text-slate-400">Please select an existing property or create a new guest house property to access the management center.</p>
+        
+        <div class="pt-2 flex justify-center space-x-3">
+            <a href="{% url 'properties:list' %}" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg">
+                View Properties <i class="fa-solid fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

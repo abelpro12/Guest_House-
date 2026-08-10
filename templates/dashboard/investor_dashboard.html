@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Investor Overview — {{ property.property_name }}{% endblock %}
+{% block page_title %}Investor Analytics & Audit Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Financial KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's Revenue</div>
+            <div class="text-2xl font-black text-emerald-400 mt-2">{{ daily_revenue }} ETB</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">7-Day Revenue</div>
+            <div class="text-2xl font-black text-indigo-400 mt-2">{{ weekly_revenue }} ETB</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">30-Day Revenue</div>
+            <div class="text-2xl font-black text-purple-400 mt-2">{{ monthly_revenue }} ETB</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Occupancy Rate</div>
+            <div class="text-2xl font-black text-amber-400 mt-2">{{ occupancy_rate }}%</div>
+            <div class="text-[11px] text-slate-500 mt-1">{{ occupied_rooms }} of {{ total_rooms }} Rooms Occupied</div>
+        </div>
+    </div>
+
+    <!-- Revenue by Payment Method & Subscription Status -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl col-span-2">
+            <h3 class="text-sm font-bold text-white mb-4">Payment Method Breakdown</h3>
+            <div class="space-y-3 text-xs">
+                {% for item in payment_breakdown %}
+                <div class="flex items-center justify-between p-3 bg-slate-800/60 rounded-xl border border-slate-700/50">
+                    <span class="font-semibold text-slate-200 uppercase">{{ item.payment_method }}</span>
+                    <span class="font-extrabold text-white">{{ item.total }} ETB</span>
+                </div>
+                {% empty %}
+                <div class="text-slate-500 text-center py-4">No completed payments recorded yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Property Subscription Box -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <h3 class="text-sm font-bold text-white mb-4 flex items-center space-x-2">
+                <i class="fa-solid fa-crown text-amber-400"></i>
+                <span>Platform Subscription</span>
+            </h3>
+
+            {% if subscription %}
+            <div class="space-y-3 text-xs">
+                <div class="flex justify-between py-2 border-b border-slate-800">
+                    <span class="text-slate-400">Status</span>
+                    <span class="font-bold {% if subscription.is_expired %}text-red-400{% else %}text-emerald-400{% endif %}">
+                        {% if subscription.is_trial %}FREE TRIAL{% else %}ACTIVE ANNUAL{% endif %}
+                    </span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-slate-800">
+                    <span class="text-slate-400">Expiration Date</span>
+                    <span class="font-bold text-white">{{ subscription.expiry_date }}</span>
+                </div>
+                <div class="flex justify-between py-2 border-b border-slate-800">
+                    <span class="text-slate-400">Days Remaining</span>
+                    <span class="font-black text-amber-400 text-sm">{{ subscription.days_remaining }} Days</span>
+                </div>
+
+                <a href="{% url 'subscriptions:status' property_id=property.id %}" class="w-full py-2.5 mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-center block rounded-xl shadow-lg">
+                    Manage / Renew Subscription
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Shifts & Audit Trail -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Shift Activity -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <h3 class="text-sm font-bold text-white mb-3">Receptionist Shift Log</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-800/60 uppercase text-[10px] text-slate-400">
+                        <tr>
+                            <th class="p-2">Receptionist</th>
+                            <th class="p-2">Start</th>
+                            <th class="p-2">Expected</th>
+                            <th class="p-2">Actual</th>
+                            <th class="p-2">Diff</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        {% for shift in recent_shifts %}
+                        <tr>
+                            <td class="p-2 font-semibold text-white">{{ shift.receptionist.username }}</td>
+                            <td class="p-2">{{ shift.start_time|date:"M d H:i" }}</td>
+                            <td class="p-2">{{ shift.expected_cash }}</td>
+                            <td class="p-2">{{ shift.actual_cash }}</td>
+                            <td class="p-2 font-bold {% if shift.difference < 0 %}text-red-400{% elif shift.difference > 0 %}text-emerald-400{% else %}text-slate-400{% endif %}">
+                                {{ shift.difference }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="p-3 text-center text-slate-500">No shifts logged yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Audit Trail -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <h3 class="text-sm font-bold text-white mb-3">Audit Log Highlights</h3>
+            <div class="space-y-2 max-h-72 overflow-y-auto">
+                {% for log in audit_logs %}
+                <div class="p-2.5 bg-slate-800/40 rounded-lg text-xs border border-slate-800 flex items-start justify-between">
+                    <div>
+                        <span class="font-bold text-indigo-400">{{ log.user.username|default:"System" }}</span>
+                        <span class="text-slate-300 ml-1">{{ log.action }}</span>
+                        <div class="text-[11px] text-slate-400 mt-0.5">{{ log.new_value }}</div>
+                    </div>
+                    <span class="text-[10px] text-slate-500 shrink-0 ml-2">{{ log.timestamp|date:"H:i M d" }}</span>
+                </div>
+                {% empty %}
+                <div class="p-4 text-center text-slate-500 text-xs">No audit logs recorded yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

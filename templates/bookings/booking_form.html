@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Reservation{% endblock %}
+{% block page_title %}New Booking Reservation{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+    <h3 class="text-base font-bold text-white mb-6 border-b border-slate-800 pb-3">Reservation Details</h3>
+
+    <form method="post" class="space-y-4 text-xs">
+        {% csrf_token %}
+
+        <div>
+            <label class="block font-semibold text-slate-300 mb-1">Select Room</label>
+            <select name="room_id" required class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                {% for room in rooms %}
+                <option value="{{ room.id }}">Room #{{ room.room_number }} ({{ room.room_type.name }} - {{ room.price_per_night }} ETB/night)</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label class="block font-semibold text-slate-300 mb-1">Select Guest</label>
+            <select name="guest_id" required class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                {% for g in guests %}
+                <option value="{{ g.id }}">{{ g.full_name }} (ID: {{ g.id_document_number }})</option>
+                {% endfor %}
+            </select>
+            <a href="{% url 'guests:create' %}" class="text-[11px] text-indigo-400 hover:underline mt-1 inline-block">+ Register New Guest First</a>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block font-semibold text-slate-300 mb-1">Check-In Date</label>
+                <input type="date" name="check_in_date" required class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+            </div>
+            <div>
+                <label class="block font-semibold text-slate-300 mb-1">Expected Check-Out Date</label>
+                <input type="date" name="expected_check_out" required class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block font-semibold text-slate-300 mb-1">Number of Guests</label>
+                <input type="number" name="number_of_guests" min="1" value="1" required class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+            </div>
+            <div>
+                <label class="block font-semibold text-slate-300 mb-1">Initial Deposit (ETB)</label>
+                <input type="number" step="0.01" name="initial_payment" value="0.00" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+            </div>
+        </div>
+
+        <div>
+            <label class="block font-semibold text-slate-300 mb-1">Payment Method</label>
+            <select name="payment_method" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                <option value="cash">Cash</option>
+                <option value="telebirr">Telebirr</option>
+                <option value="cbe_birr">CBE Birr</option>
+                <option value="bank_transfer">Bank Transfer</option>
+            </select>
+        </div>
+
+        <div class="pt-4 flex justify-end space-x-3">
+            <a href="{% url 'bookings:list' %}" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg font-semibold">Cancel</a>
+            <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg">Confirm Booking</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit User Settings — {{ target_user.username }}{% endblock %}
+{% block page_title %}Manage User Settings{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Back Button & User Info Header -->
+    <div class="flex items-center justify-between">
+        <a href="{% if target_user.role == 'investor' %}{% url 'accounts:investors' %}{% else %}{% url 'properties:staff' %}{% endif %}"
+           class="inline-flex items-center space-x-2 text-xs font-bold text-slate-400 hover:text-white">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Back to Users Directory</span>
+        </a>
+        <span class="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full text-xs font-bold uppercase">
+            Role: {{ target_user.get_role_display|default:target_user.role }}
+        </span>
+    </div>
+
+    <!-- Main Settings Card -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- Left Profile Summary Card -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4 text-center">
+            <div class="w-20 h-20 mx-auto rounded-full bg-indigo-600/30 text-indigo-400 border border-indigo-500/40 flex items-center justify-center text-2xl font-black">
+                {{ target_user.username|first|upper }}
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-white">{{ target_user.get_full_name|default:target_user.username }}</h3>
+                <p class="text-xs text-indigo-400 font-mono">@{{ target_user.username }}</p>
+                <p class="text-[11px] text-slate-400 mt-1">{{ target_user.email|default:"No email set" }}</p>
+            </div>
+
+            <div class="pt-4 border-t border-slate-800 space-y-2 text-left text-xs">
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Status:</span>
+                    {% if target_user.is_active %}
+                    <span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check mr-1"></i>Active</span>
+                    {% else %}
+                    <span class="text-rose-400 font-bold"><i class="fa-solid fa-circle-xmark mr-1"></i>Deactivated</span>
+                    {% endif %}
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Joined:</span>
+                    <span class="text-slate-300 font-mono">{{ target_user.date_joined|date:"M d, Y" }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Phone:</span>
+                    <span class="text-slate-300 font-mono">{{ target_user.phone_number|default:"N/A" }}</span>
+                </div>
+            </div>
+
+            <!-- Account Deactivation Toggle -->
+            <form method="POST" action="{% url 'accounts:edit_user' user_id=target_user.id %}" class="pt-2">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="toggle_active">
+                {% if target_user.is_active %}
+                <button type="submit" onclick="return confirm('Deactivate user {{ target_user.username }}?');"
+                        class="w-full py-2 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 rounded-xl text-xs font-bold transition-all">
+                    Deactivate Account
+                </button>
+                {% else %}
+                <button type="submit"
+                        class="w-full py-2 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-800 rounded-xl text-xs font-bold transition-all">
+                    Activate Account
+                </button>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- Right Edit Forms -->
+        <div class="md:col-span-2 space-y-6">
+
+            <!-- Form 1: Profile & Contact Settings -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                <h4 class="text-sm font-bold text-white border-b border-slate-800 pb-3 uppercase tracking-wider flex items-center space-x-2">
+                    <i class="fa-solid fa-user-pen text-indigo-400"></i>
+                    <span>Profile & Contact Details</span>
+                </h4>
+
+                <form method="POST" action="{% url 'accounts:edit_user' user_id=target_user.id %}" class="space-y-4 text-xs">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile">
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-bold text-slate-400 mb-1">First Name</label>
+                            <input type="text" name="first_name" value="{{ target_user.first_name }}" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-400 mb-1">Last Name</label>
+                            <input type="text" name="last_name" value="{{ target_user.last_name }}" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-bold text-slate-400 mb-1">Email Address</label>
+                            <input type="email" name="email" value="{{ target_user.email }}" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-400 mb-1">Phone Number</label>
+                            <input type="text" name="phone_number" value="{{ target_user.phone_number }}" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs">
+                        </div>
+                    </div>
+
+                    {% if request.user.is_admin %}
+                    <div>
+                        <label class="block font-bold text-slate-400 mb-1">System Role</label>
+                        <select name="role" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs font-bold">
+                            <option value="admin" {% if target_user.role == 'admin' %}selected{% endif %}>Platform Admin (Super Admin)</option>
+                            <option value="investor" {% if target_user.role == 'investor' %}selected{% endif %}>Investor (Property Owner)</option>
+                            <option value="receptionist" {% if target_user.role == 'receptionist' %}selected{% endif %}>Receptionist (Front Desk Staff)</option>
+                            <option value="guest" {% if target_user.role == 'guest' %}selected{% endif %}>Guest User</option>
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <div class="flex justify-end pt-2">
+                        <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all">
+                            Save Profile Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Form 2: Super Admin Password Override -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                <h4 class="text-sm font-bold text-white border-b border-slate-800 pb-3 uppercase tracking-wider flex items-center space-x-2">
+                    <i class="fa-solid fa-key text-amber-400"></i>
+                    <span>Admin Password Override</span>
+                </h4>
+
+                <form method="POST" action="{% url 'accounts:edit_user' user_id=target_user.id %}" class="space-y-4 text-xs">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reset_password">
+
+                    <div>
+                        <label class="block font-bold text-slate-400 mb-1">Set New Password for @{{ target_user.username }}</label>
+                        <input type="password" name="new_password" required placeholder="Enter new password (min 6 characters)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-white text-xs">
+                    </div>
+
+                    <div class="flex justify-end pt-2">
+                        <button type="submit" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all">
+                            Reset Password Now
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}New Cleaning Task{% endblock %}
+{% block page_title %}Schedule Housekeeping Task{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+    <h3 class="text-base font-bold text-white mb-4 border-b border-slate-800 pb-3">Cleaning Details</h3>
+
+    <form method="post" class="space-y-4 text-xs">
+        {% csrf_token %}
+
+        <div>
+            <label class="block font-semibold text-slate-300 mb-1">Select Room</label>
+            <select name="room_id" required class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                {% for room in rooms %}
+                <option value="{{ room.id }}">Room #{{ room.room_number }} (Current Status: {{ room.get_status_display }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label class="block font-semibold text-slate-300 mb-1">Task Instructions</label>
+            <textarea name="task_description" rows="2" placeholder="Full cleaning & linen change" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white"></textarea>
+        </div>
+
+        <div>
+            <label class="block font-semibold text-slate-300 mb-1">Priority</label>
+            <select name="priority" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High / Rush Checkout</option>
+            </select>
+        </div>
+
+        <div class="pt-3 flex justify-end space-x-3">
+            <a href="{% url 'housekeeping:list' %}" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg font-semibold">Cancel</a>
+            <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg">Save Task</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

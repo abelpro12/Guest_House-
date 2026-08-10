@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Receipt #{{ receipt.receipt_number }}{% endblock %}
+{% block page_title %}Official Payment Receipt{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6">
+    <div class="text-center border-b border-slate-800 pb-6">
+        <h2 class="text-xl font-black text-white uppercase tracking-wide">{{ receipt.property.property_name }}</h2>
+        <p class="text-xs text-slate-400 mt-1">{{ receipt.property.address }} | Phone: {{ receipt.property.phone }}</p>
+        <div class="mt-4 inline-block px-4 py-1.5 bg-indigo-950/60 border border-indigo-700/60 rounded-xl text-xs font-mono font-bold text-indigo-300">
+            OFFICIAL RECEIPT #{{ receipt.receipt_number }}
+        </div>
+        {% if receipt.is_voided %}
+        <div class="mt-2 text-xs font-bold text-rose-400 uppercase tracking-widest"><i class="fa-solid fa-triangle-exclamation mr-1"></i> *** THIS RECEIPT IS VOIDED ***</div>
+        {% endif %}
+    </div>
+
+    <!-- Receipt Details Table -->
+    <div class="space-y-3 text-xs bg-slate-800/40 p-5 rounded-xl border border-slate-800">
+        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-400">Date & Time:</span> <span class="font-mono text-white">{{ receipt.created_at|date:"Y-m-d H:i" }}</span></div>
+        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-400">Received From:</span> <span class="font-bold text-white">{{ receipt.guest.full_name }}</span></div>
+        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-400">ID Document:</span> <span class="font-mono text-slate-300">{{ receipt.guest.id_document_number }}</span></div>
+        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-400">Booking Reference:</span> <span class="font-mono text-indigo-400 font-bold">{{ receipt.booking.booking_reference }}</span></div>
+        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-400">Room Number:</span> <span class="font-bold text-white">#{{ receipt.booking.room.room_number }}</span></div>
+        <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-400">Payment Method:</span> <span class="font-semibold uppercase text-slate-200">{{ receipt.transaction.get_payment_method_display }}</span></div>
+        <div class="flex justify-between py-2 items-center text-sm"><span class="font-bold text-slate-300">Amount Paid:</span> <span class="font-black text-emerald-400 text-lg">{{ receipt.amount_paid }} ETB</span></div>
+    </div>
+
+    <!-- Actions: Print / PDF Download / Void -->
+    <div class="flex items-center justify-between pt-2">
+        <a href="{% url 'receipts:pdf' receipt_id=receipt.id %}" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-2">
+            <i class="fa-solid fa-file-pdf"></i>
+            <span>Download PDF Receipt</span>
+        </a>
+
+        {% if user.is_admin or user.is_investor %}
+        {% if not receipt.is_voided %}
+        <form action="{% url 'receipts:void' receipt_id=receipt.id %}" method="post" onsubmit="return confirm('Void receipt #{{ receipt.receipt_number }}? Audit log will be created.')">
+            {% csrf_token %}
+            <input type="hidden" name="reason" value="Admin requested void">
+            <button type="submit" class="px-4 py-2 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 font-bold text-xs rounded-xl">
+                Void Receipt
+            </button>
+        </form>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

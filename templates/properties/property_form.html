@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Property{% endblock %}
+{% block page_title %}New Guest House Property{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+    <h3 class="text-base font-bold text-white mb-6 border-b border-slate-800 pb-3">Property Details (Includes 365-Day Free Trial)</h3>
+
+    <form method="post" class="space-y-4 text-xs">
+        {% csrf_token %}
+        <div>
+            <label class="block font-semibold text-slate-300 mb-1">Property Name</label>
+            <input type="text" name="property_name" required placeholder="e.g. Skyline Lodge" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+        </div>
+
+        <div>
+            <label class="block font-semibold text-slate-300 mb-1">Address / Location</label>
+            <textarea name="address" required rows="2" placeholder="Full address" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white"></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block font-semibold text-slate-300 mb-1">Phone Number</label>
+                <input type="text" name="phone" required placeholder="+251 ..." class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+            </div>
+            <div>
+                <label class="block font-semibold text-slate-300 mb-1">Email Address</label>
+                <input type="email" name="email" required placeholder="contact@lodge.com" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+            </div>
+        </div>
+
+        {% if user.is_admin and investors %}
+        <div>
+            <label class="block font-semibold text-slate-300 mb-1">Assign Investor / Owner</label>
+            <select name="investor_id" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                {% for inv in investors %}
+                <option value="{{ inv.id }}">{{ inv.get_full_name|default:inv.username }} ({{ inv.email }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        <div class="pt-4 flex justify-end space-x-3">
+            <a href="{% url 'properties:list' %}" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg font-semibold">Cancel</a>
+            <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg">
+                Create Property
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

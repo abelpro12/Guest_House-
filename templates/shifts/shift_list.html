@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Shift Register{% endblock %}
+{% block page_title %}Shift Management & Cash Reconciliation{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-white">Shift Register History</h3>
+
+        {% if current_shift %}
+        <a href="{% url 'shifts:close' shift_id=current_shift.id %}" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-lg">
+            Close Active Shift (Started {{ current_shift.start_time|time:"H:i" }})
+        </a>
+        {% else %}
+        <a href="{% url 'shifts:start' %}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg">
+            + Start New Shift
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
+                <tr>
+                    <th class="p-3">Shift ID</th>
+                    <th class="p-3">Receptionist</th>
+                    <th class="p-3">Start Time</th>
+                    <th class="p-3">End Time</th>
+                    <th class="p-3">Opening Cash</th>
+                    <th class="p-3">Expected Cash</th>
+                    <th class="p-3">Actual Cash</th>
+                    <th class="p-3">Difference</th>
+                    <th class="p-3">Status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800">
+                {% for shift in shifts %}
+                <tr>
+                    <td class="p-3 font-mono font-bold text-indigo-400">#{{ shift.id }}</td>
+                    <td class="p-3 font-bold text-white">{{ shift.receptionist.username }}</td>
+                    <td class="p-3 text-slate-400">{{ shift.start_time|date:"Y-m-d H:i" }}</td>
+                    <td class="p-3 text-slate-400">{{ shift.end_time|date:"Y-m-d H:i"|default:"Active Now" }}</td>
+                    <td class="p-3 font-semibold">{{ shift.opening_cash }} ETB</td>
+                    <td class="p-3 font-bold text-slate-200">{{ shift.expected_cash }} ETB</td>
+                    <td class="p-3 font-bold text-emerald-400">{{ shift.actual_cash }} ETB</td>
+                    <td class="p-3 font-extrabold {% if shift.difference < 0 %}text-rose-400{% elif shift.difference > 0 %}text-emerald-400{% else %}text-slate-400{% endif %}">
+                        {{ shift.difference }} ETB
+                    </td>
+                    <td class="p-3">
+                        <span class="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase
+                            {% if shift.status == 'open' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
+                            {% else %}bg-slate-800 text-slate-400{% endif %}">
+                            {{ shift.get_status_display }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9" class="p-6 text-center text-slate-500">No shifts logged yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

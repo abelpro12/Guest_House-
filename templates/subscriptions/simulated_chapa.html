@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Chapa Payment Gateway (Sandbox){% endblock %}
+{% block page_title %}Chapa Checkout Simulator{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center space-y-6 shadow-2xl">
+    <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center text-3xl mx-auto border border-emerald-500/30">
+        <i class="fa-solid fa-money-bill-transfer"></i>
+    </div>
+
+    <div>
+        <h3 class="text-xl font-bold text-white">Chapa Sandbox Gateway</h3>
+        <p class="text-xs text-slate-400 mt-1">Transaction Ref: <code class="text-indigo-400 font-mono">{{ sub_tx.tx_ref }}</code></p>
+    </div>
+
+    <div class="p-4 bg-slate-800/60 rounded-xl text-xs space-y-2 border border-slate-700">
+        <div class="flex justify-between text-slate-400"><span>Item:</span> <span class="font-bold text-white">Annual License Renewal</span></div>
+        <div class="flex justify-between text-slate-400"><span>Amount:</span> <span class="font-black text-emerald-400 text-sm">5,000.00 ETB</span></div>
+    </div>
+
+    <div class="space-y-3">
+        <a href="{% url 'subscriptions:verify_chapa' tx_ref=sub_tx.tx_ref %}?simulate=1" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg block">
+            <i class="fa-solid fa-circle-check mr-1"></i> Simulate Successful Chapa Payment
+        </a>
+
+        <a href="{% url 'subscriptions:status' property_id=sub_tx.subscription.property.id %}" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-400 font-semibold text-xs rounded-xl block">
+            Cancel Transaction
+        </a>
+    </div>
+</div>
+{% endblock %}

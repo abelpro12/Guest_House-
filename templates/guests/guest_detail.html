@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Guest History — {{ guest.full_name }}{% endblock %}
+{% block page_title %}Guest Profile & History{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+            <h3 class="text-xl font-bold text-white">{{ guest.full_name }}</h3>
+            <p class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-phone mr-1"></i> {{ guest.phone_number }} | <i class="fa-solid fa-envelope mr-1"></i> {{ guest.email|default:"N/A" }}</p>
+            <div class="mt-2 inline-block px-3 py-1 bg-slate-800 rounded-lg text-xs font-mono text-indigo-300 border border-slate-700">
+                {{ guest.get_id_document_type_display }}: {{ guest.id_document_number }} ({{ guest.nationality }})
+            </div>
+        </div>
+
+        <a href="{% url 'bookings:create' %}?guest_id={{ guest.id }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg">
+            + New Booking for Guest
+        </a>
+    </div>
+
+    <!-- Booking History -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <h4 class="text-sm font-bold text-white">Past & Present Stays</h4>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
+                    <tr>
+                        <th class="p-3">Ref</th>
+                        <th class="p-3">Property</th>
+                        <th class="p-3">Room</th>
+                        <th class="p-3">Check-In</th>
+                        <th class="p-3">Check-Out</th>
+                        <th class="p-3">Total Amount</th>
+                        <th class="p-3">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    {% for b in bookings %}
+                    <tr>
+                        <td class="p-3 font-mono text-indigo-400"><a href="{% url 'bookings:detail' booking_id=b.id %}" class="hover:underline">{{ b.booking_reference }}</a></td>
+                        <td class="p-3 font-bold text-white">{{ b.property.property_name }}</td>
+                        <td class="p-3">#{{ b.room.room_number }}</td>
+                        <td class="p-3">{{ b.check_in_date }}</td>
+                        <td class="p-3">{{ b.expected_check_out }}</td>
+                        <td class="p-3 font-bold text-white">{{ b.total_amount }} ETB</td>
+                        <td class="p-3">
+                            <span class="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase
+                                {% if b.status == 'checked_in' %}bg-emerald-500/20 text-emerald-400
+                                {% elif b.status == 'checked_out' %}bg-slate-800 text-slate-400
+                                {% else %}bg-amber-500/20 text-amber-400{% endif %}">
+                                {{ b.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="p-4 text-center text-slate-500">No booking history recorded.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

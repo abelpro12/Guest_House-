@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+
+{% block title %}Front Desk Dashboard — {{ property.property_name }}{% endblock %}
+{% block page_title %}Receptionist Command Center{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Top Overview Stat Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-center">
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Rooms</div>
+            <div class="text-xl font-extrabold text-white mt-1">{{ total_rooms }}</div>
+        </div>
+
+        <div class="bg-emerald-950/30 border border-emerald-800/40 rounded-xl p-3 text-center">
+            <div class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">🟢 Vacant</div>
+            <div class="text-xl font-extrabold text-emerald-300 mt-1">{{ vacant_count }}</div>
+        </div>
+
+        <div class="bg-rose-950/30 border border-rose-800/40 rounded-xl p-3 text-center">
+            <div class="text-[10px] font-bold text-rose-400 uppercase tracking-wider">🔴 Occupied</div>
+            <div class="text-xl font-extrabold text-rose-300 mt-1">{{ occupied_count }}</div>
+        </div>
+
+        <div class="bg-amber-950/30 border border-amber-800/40 rounded-xl p-3 text-center">
+            <div class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">🟡 Cleaning</div>
+            <div class="text-xl font-extrabold text-amber-300 mt-1">{{ cleaning_count }}</div>
+        </div>
+
+        <div class="bg-sky-950/30 border border-sky-800/40 rounded-xl p-3 text-center">
+            <div class="text-[10px] font-bold text-sky-400 uppercase tracking-wider">🔵 Maintenance</div>
+            <div class="text-xl font-extrabold text-sky-300 mt-1">{{ maintenance_count }}</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-700/50 rounded-xl p-3 text-center">
+            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">⚫ Unavailable</div>
+            <div class="text-xl font-extrabold text-slate-300 mt-1">{{ unavailable_count }}</div>
+        </div>
+
+        <div class="bg-indigo-950/30 border border-indigo-800/40 rounded-xl p-3 text-center col-span-2 md:col-span-1">
+            <div class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Today's Cash</div>
+            <div class="text-xl font-extrabold text-indigo-300 mt-1">{{ today_revenue }} ETB</div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Toolbar -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+            <button onclick="openModal('quickCheckInModal')" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/30 flex items-center space-x-2 transition-all">
+                <i class="fa-solid fa-right-to-bracket text-sm"></i>
+                <span>Quick Check-In</span>
+            </button>
+
+            <a href="{% url 'bookings:create' %}" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/30 flex items-center space-x-2 transition-all">
+                <i class="fa-solid fa-plus text-sm"></i>
+                <span>New Booking</span>
+            </a>
+
+            <a href="{% url 'guests:create' %}" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 flex items-center space-x-2 transition-all">
+                <i class="fa-solid fa-user-plus text-sm"></i>
+                <span>Register Guest</span>
+            </a>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            {% if active_shift %}
+            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2"></span> Shift Open (Since {{ active_shift.start_time|time:"H:i" }})
+            </span>
+            <a href="{% url 'shifts:close' shift_id=active_shift.id %}" class="px-3 py-1.5 bg-rose-900/40 hover:bg-rose-900/60 text-rose-300 border border-rose-700/60 font-semibold text-xs rounded-lg transition-all">
+                Close Shift
+            </a>
+            {% else %}
+            <a href="{% url 'shifts:start' %}" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-amber-600/30 flex items-center space-x-2 transition-all">
+                <i class="fa-solid fa-clock text-sm"></i>
+                <span>Start Shift</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Live Room Operational Grid -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-bold text-white tracking-wide">Live Room Status Grid</h3>
+            <span class="text-xs text-slate-400">Click a room to update status or start check-out</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {% for room in rooms %}
+            <div class="relative group rounded-xl p-4 border transition-all duration-200 cursor-pointer shadow-lg
+                {% if room.status == 'vacant' %}bg-emerald-950/30 border-emerald-800/50 hover:bg-emerald-900/40
+                {% elif room.status == 'occupied' %}bg-rose-950/30 border-rose-800/50 hover:bg-rose-900/40
+                {% elif room.status == 'cleaning' %}bg-amber-950/30 border-amber-800/50 hover:bg-amber-900/40
+                {% elif room.status == 'maintenance' %}bg-sky-950/30 border-sky-800/50 hover:bg-sky-900/40
+                {% else %}bg-slate-950/50 border-slate-800 hover:bg-slate-900{% endif %}"
+                onclick="openRoomModal({{ room.id }}, '{{ room.room_number }}', '{{ room.status }}', '{{ room.price_per_night }}')">
+
+                <div class="flex items-center justify-between mb-2">
+                    <span class="font-extrabold text-lg text-white">#{{ room.room_number }}</span>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded-md
+                        {% if room.status == 'vacant' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
+                        {% elif room.status == 'occupied' %}bg-rose-500/20 text-rose-400 border border-rose-500/30
+                        {% elif room.status == 'cleaning' %}bg-amber-500/20 text-amber-400 border border-amber-500/30
+                        {% elif room.status == 'maintenance' %}bg-sky-500/20 text-sky-400 border border-sky-500/30
+                        {% else %}bg-slate-800 text-slate-400{% endif %}">
+                        {{ room.get_status_display }}
+                    </span>
+                </div>
+
+                <div class="text-xs text-slate-300 font-medium truncate">{{ room.room_type.name }}</div>
+                <div class="text-[11px] text-slate-400 mt-1">{{ room.price_per_night }} ETB / night</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Tables: Today's Arrivals & Departures -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Arrivals -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <h4 class="text-sm font-bold text-white mb-3 flex items-center space-x-2">
+                <i class="fa-solid fa-plane-arrival text-emerald-400"></i>
+                <span>Today's Arrivals</span>
+            </h4>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-800/60 uppercase text-[10px] text-slate-400 font-semibold">
+                        <tr>
+                            <th class="p-2.5">Room</th>
+                            <th class="p-2.5">Guest</th>
+                            <th class="p-2.5">Ref</th>
+                            <th class="p-2.5">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        {% for booking in today_arrivals %}
+                        <tr>
+                            <td class="p-2.5 font-bold text-white">#{{ booking.room.room_number }}</td>
+                            <td class="p-2.5">{{ booking.guest.full_name }}</td>
+                            <td class="p-2.5 text-indigo-400 font-mono">{{ booking.booking_reference }}</td>
+                            <td class="p-2.5">
+                                <a href="{% url 'bookings:detail' booking_id=booking.id %}" class="text-indigo-400 hover:underline">View</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="p-4 text-center text-slate-500">No arrivals scheduled for today.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Departures -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <h4 class="text-sm font-bold text-white mb-3 flex items-center space-x-2">
+                <i class="fa-solid fa-plane-departure text-rose-400"></i>
+                <span>Today's Departures</span>
+            </h4>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-800/60 uppercase text-[10px] text-slate-400 font-semibold">
+                        <tr>
+                            <th class="p-2.5">Room</th>
+                            <th class="p-2.5">Guest</th>
+                            <th class="p-2.5">Ref</th>
+                            <th class="p-2.5">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        {% for booking in today_departures %}
+                        <tr>
+                            <td class="p-2.5 font-bold text-white">#{{ booking.room.room_number }}</td>
+                            <td class="p-2.5">{{ booking.guest.full_name }}</td>
+                            <td class="p-2.5 text-indigo-400 font-mono">{{ booking.booking_reference }}</td>
+                            <td class="p-2.5">
+                                <a href="{% url 'bookings:check_out' booking_id=booking.id %}" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded font-bold text-[11px]">Check-Out</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="p-4 text-center text-slate-500">No departures scheduled for today.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Quick Check-In -->
+<div id="quickCheckInModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                <i class="fa-solid fa-right-to-bracket text-emerald-400"></i>
+                <span>Quick Check-In Workflow</span>
+            </h3>
+            <button onclick="closeModal('quickCheckInModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <form action="{% url 'bookings:quick_check_in' %}" method="post" class="space-y-4 text-xs">
+            {% csrf_token %}
+            <div>
+                <label class="block font-semibold text-slate-400 mb-1">Select Vacant Room</label>
+                <select name="room_id" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                    {% for room in rooms %}
+                        {% if room.status == 'vacant' %}
+                        <option value="{{ room.id }}">Room #{{ room.room_number }} ({{ room.room_type.name }} - {{ room.price_per_night }} ETB/night)</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-400 mb-1">Select Guest</label>
+                <select name="guest_id" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                    {% for g in guests %}
+                    <option value="{{ g.id }}">{{ g.full_name }} ({{ g.id_document_number }})</option>
+                    {% endfor %}
+                </select>
+                <a href="{% url 'guests:create' %}" class="text-[11px] text-indigo-400 hover:underline mt-1 inline-block">+ Register New Guest</a>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-semibold text-slate-400 mb-1">Nights</label>
+                    <input type="number" name="nights" min="1" value="1" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-400 mb-1">Initial Payment (ETB)</label>
+                    <input type="number" step="0.01" name="initial_payment" value="0.00" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-400 mb-1">Payment Method</label>
+                <select name="payment_method" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                    <option value="cash">Cash</option>
+                    <option value="telebirr">Telebirr</option>
+                    <option value="cbe_birr">CBE Birr</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                </select>
+            </div>
+
+            <div class="pt-3 flex justify-end space-x-3">
+                <button type="button" onclick="closeModal('quickCheckInModal')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg font-semibold">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg">Confirm Check-In</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Room Status Update -->
+<div id="roomModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-base font-bold text-white">Update Room <span id="modalRoomNum"></span></h3>
+            <button onclick="closeModal('roomModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <form id="roomStatusForm" method="post" class="space-y-4 text-xs">
+            {% csrf_token %}
+            <div>
+                <label class="block font-semibold text-slate-400 mb-1">Operational Status</label>
+                <select name="status" id="modalRoomStatus" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                    <option value="vacant">🟢 Vacant / Ready</option>
+                    <option value="occupied">🔴 Occupied</option>
+                    <option value="cleaning">🟡 Cleaning / Housekeeping</option>
+                    <option value="maintenance">🔵 Maintenance</option>
+                    <option value="unavailable">⚫ Unavailable</option>
+                </select>
+            </div>
+
+            <div class="pt-3 flex justify-end space-x-3">
+                <button type="button" onclick="closeModal('roomModal')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg font-semibold">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg">Save Status</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function openModal(id) {
+        document.getElementById(id).classList.remove('hidden');
+    }
+    function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+    }
+    function openRoomModal(roomId, roomNum, status, price) {
+        document.getElementById('modalRoomNum').innerText = '#' + roomNum;
+        document.getElementById('modalRoomStatus').value = status;
+        document.getElementById('roomStatusForm').action = '/rooms/' + roomId + '/status/';
+        openModal('roomModal');
+    }
+</script>
+{% endblock %}

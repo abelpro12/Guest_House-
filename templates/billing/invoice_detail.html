@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Invoice #{{ invoice.invoice_number }}{% endblock %}
+{% block page_title %}Official Guest House Invoice{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-6">
+        <div>
+            <h2 class="text-2xl font-black text-white font-mono">INVOICE #{{ invoice.invoice_number }}</h2>
+            <p class="text-xs text-slate-400 mt-1">Property: <span class="text-white font-semibold">{{ invoice.booking.property.property_name }}</span></p>
+        </div>
+        <div class="text-right">
+            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase
+                {% if invoice.status == 'paid' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
+                {% elif invoice.status == 'partially_paid' %}bg-amber-500/20 text-amber-400 border border-amber-500/30
+                {% else %}bg-rose-500/20 text-rose-400 border border-rose-500/30{% endif %}">
+                {{ invoice.get_status_display }}
+            </span>
+            <div class="text-xs text-slate-400 mt-2">Date: {{ invoice.created_at|date:"Y-m-d H:i" }}</div>
+        </div>
+    </div>
+
+    <!-- Billed To -->
+    <div class="grid grid-cols-2 gap-4 bg-slate-800/40 p-4 rounded-xl text-xs border border-slate-800">
+        <div>
+            <span class="text-slate-400 block font-semibold">BILLED TO:</span>
+            <div class="font-bold text-white text-sm mt-1">{{ invoice.booking.guest.full_name }}</div>
+            <div class="text-slate-300">Phone: {{ invoice.booking.guest.phone_number }}</div>
+            <div class="text-slate-400">ID: {{ invoice.booking.guest.id_document_number }}</div>
+        </div>
+        <div>
+            <span class="text-slate-400 block font-semibold">BOOKING REF:</span>
+            <div class="font-mono text-indigo-400 text-sm mt-1">{{ invoice.booking.booking_reference }}</div>
+            <div class="text-slate-300">Room #{{ invoice.booking.room.room_number }} ({{ invoice.booking.room.room_type.name }})</div>
+        </div>
+    </div>
+
+    <!-- Itemized Table -->
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
+                <tr>
+                    <th class="p-3">Description</th>
+                    <th class="p-3">Qty</th>
+                    <th class="p-3">Unit Price (ETB)</th>
+                    <th class="p-3 text-right">Total (ETB)</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800">
+                {% for item in invoice.items.all %}
+                <tr>
+                    <td class="p-3 font-semibold text-white">{{ item.description }}</td>
+                    <td class="p-3">{{ item.quantity }}</td>
+                    <td class="p-3">{{ item.unit_price }}</td>
+                    <td class="p-3 text-right font-bold text-white">{{ item.total }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Calculation Footer -->
+    <div class="border-t border-slate-800 pt-4 text-xs space-y-2 max-w-xs ml-auto">
+        <div class="flex justify-between text-slate-400"><span>Subtotal:</span> <span class="font-bold text-white">{{ invoice.subtotal }} ETB</span></div>
+        <div class="flex justify-between text-slate-400"><span>Discount:</span> <span class="text-emerald-400">-{{ invoice.discount }} ETB</span></div>
+        <div class="flex justify-between text-slate-400"><span>Tax / Service:</span> <span>+{{ invoice.tax }} ETB</span></div>
+        <div class="flex justify-between text-base font-extrabold text-white pt-2 border-t border-slate-700">
+            <span>Grand Total:</span>
+            <span>{{ invoice.total }} ETB</span>
+        </div>
+        <div class="flex justify-between text-emerald-400 font-bold"><span>Amount Paid:</span> <span>{{ invoice.amount_paid }} ETB</span></div>
+        <div class="flex justify-between text-amber-400 font-extrabold text-sm pt-1"><span>Balance Due:</span> <span>{{ invoice.balance }} ETB</span></div>
+    </div>
+</div>
+{% endblock %}

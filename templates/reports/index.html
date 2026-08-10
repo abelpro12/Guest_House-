@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Financial & Occupancy Reports{% endblock %}
+{% block page_title %}Comprehensive Reports & Exports{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Filter & Export Controls Header -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center space-x-2 text-xs">
+            <span class="font-semibold text-slate-400">Report Scope:</span>
+            <a href="?period=daily" class="px-4 py-2 rounded-xl font-bold border {% if period == 'daily' %}bg-indigo-600 text-white border-indigo-500{% else %}bg-slate-800 text-slate-300 border-slate-700{% endif %}">Daily</a>
+            <a href="?period=weekly" class="px-4 py-2 rounded-xl font-bold border {% if period == 'weekly' %}bg-indigo-600 text-white border-indigo-500{% else %}bg-slate-800 text-slate-300 border-slate-700{% endif %}">Weekly</a>
+            <a href="?period=monthly" class="px-4 py-2 rounded-xl font-bold border {% if period == 'monthly' %}bg-indigo-600 text-white border-indigo-500{% else %}bg-slate-800 text-slate-300 border-slate-700{% endif %}">Monthly</a>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'reports:export_csv' %}" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-2">
+                <i class="fa-solid fa-file-csv"></i>
+                <span>Export CSV</span>
+            </a>
+            <a href="{% url 'reports:export_excel' %}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-2">
+                <i class="fa-solid fa-file-excel"></i>
+                <span>Export Excel</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Revenue ({{ period|title }})</div>
+            <div class="text-2xl font-black text-emerald-400 mt-2">{{ total_revenue }} ETB</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Occupancy Rate</div>
+            <div class="text-2xl font-black text-amber-400 mt-2">{{ occupancy_rate }}%</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Reservations</div>
+            <div class="text-2xl font-black text-indigo-400 mt-2">{{ total_bookings }}</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Rooms</div>
+            <div class="text-2xl font-black text-purple-400 mt-2">{{ total_rooms }}</div>
+        </div>
+    </div>
+
+    <!-- Transactions List -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <h4 class="font-bold text-white text-sm">Completed Financial Transactions</h4>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
+                    <tr>
+                        <th class="p-3">Tx Ref</th>
+                        <th class="p-3">Booking Ref</th>
+                        <th class="p-3">Date</th>
+                        <th class="p-3">Payment Method</th>
+                        <th class="p-3">Amount (ETB)</th>
+                        <th class="p-3">Received By</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    {% for tx in transactions %}
+                    <tr>
+                        <td class="p-3 font-mono font-bold text-indigo-400">{{ tx.reference_id }}</td>
+                        <td class="p-3 font-mono text-slate-300">{{ tx.booking.booking_reference }}</td>
+                        <td class="p-3 text-slate-400">{{ tx.timestamp|date:"Y-m-d H:i" }}</td>
+                        <td class="p-3 font-semibold uppercase">{{ tx.get_payment_method_display }}</td>
+                        <td class="p-3 font-bold text-emerald-400 text-sm">{{ tx.amount }}</td>
+                        <td class="p-3">{{ tx.received_by.username|default:"Staff" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="p-6 text-center text-slate-500">No transactions recorded for this period.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

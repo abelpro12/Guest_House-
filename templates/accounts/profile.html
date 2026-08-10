@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile{% endblock %}
+{% block page_title %}User Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+    <h3 class="text-lg font-bold text-white mb-6 border-b border-slate-800 pb-4">Personal Details</h3>
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">First Name</label>
+                <input type="text" name="first_name" value="{{ user.first_name }}" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Last Name</label>
+                <input type="text" name="last_name" value="{{ user.last_name }}" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs">
+            </div>
+        </div>
+        <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Email Address</label>
+            <input type="email" name="email" value="{{ user.email }}" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs">
+        </div>
+        <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Phone Number</label>
+            <input type="text" name="phone_number" value="{{ user.phone_number }}" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-xs">
+        </div>
+        <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">System Role</label>
+            <input type="text" value="{{ user.get_role_display }}" disabled class="w-full px-4 py-2 bg-slate-800/50 border border-slate-800 rounded-lg text-slate-400 text-xs font-semibold cursor-not-allowed">
+        </div>
+
+        <div class="pt-4 flex items-center justify-between">
+            <button type="submit" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl shadow-lg shadow-indigo-600/30">
+                Save Changes
+            </button>
+            <a href="{% url 'accounts:change_password' %}" class="text-xs font-semibold text-indigo-400 hover:underline">
+                Change Password <i class="fa-solid fa-key ml-1"></i>
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

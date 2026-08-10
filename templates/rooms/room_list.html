@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}Room Management{% endblock %}
+{% block page_title %}Rooms & Availability{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-center space-x-2 text-xs">
+            <span class="font-semibold text-slate-400">Filter Status:</span>
+            <a href="{% url 'rooms:list' %}" class="px-3 py-1 rounded-lg border {% if not current_status %}bg-indigo-600 text-white border-indigo-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">All</a>
+            <a href="?status=vacant" class="px-3 py-1 rounded-lg border {% if current_status == 'vacant' %}bg-emerald-600 text-white border-emerald-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Vacant</a>
+            <a href="?status=occupied" class="px-3 py-1 rounded-lg border {% if current_status == 'occupied' %}bg-rose-600 text-white border-rose-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Occupied</a>
+            <a href="?status=cleaning" class="px-3 py-1 rounded-lg border {% if current_status == 'cleaning' %}bg-amber-600 text-white border-amber-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Cleaning</a>
+            <a href="?status=maintenance" class="px-3 py-1 rounded-lg border {% if current_status == 'maintenance' %}bg-sky-600 text-white border-sky-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Maintenance</a>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <button onclick="openModal('bulkAddModal')" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-1">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>+ Bulk Add Rooms</span>
+            </button>
+            <button onclick="openModal('addRoomModal')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-1">
+                <i class="fa-solid fa-plus"></i>
+                <span>+ Single Room</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Rooms Table -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
+                <tr>
+                    <th class="p-3">Room #</th>
+                    <th class="p-3">Room Type</th>
+                    <th class="p-3">Capacity</th>
+                    <th class="p-3">Nightly Rate</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800">
+                {% for room in rooms %}
+                <tr>
+                    <td class="p-3 font-extrabold text-white text-sm">#{{ room.room_number }}</td>
+                    <td class="p-3 font-semibold text-slate-200">{{ room.room_type.name }}</td>
+                    <td class="p-3">{{ room.room_type.capacity }} Person(s)</td>
+                    <td class="p-3 font-bold text-white">{{ room.price_per_night }} ETB</td>
+                    <td class="p-3">
+                        <span class="px-2.5 py-1 rounded-md text-[11px] font-bold
+                            {% if room.status == 'vacant' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
+                            {% elif room.status == 'occupied' %}bg-rose-500/20 text-rose-400 border border-rose-500/30
+                            {% elif room.status == 'cleaning' %}bg-amber-500/20 text-amber-400 border border-amber-500/30
+                            {% elif room.status == 'maintenance' %}bg-sky-500/20 text-sky-400 border border-sky-500/30
+                            {% else %}bg-slate-800 text-slate-400{% endif %}">
+                            {{ room.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="p-3">
+                        <button onclick="openStatusModal({{ room.id }}, '{{ room.room_number }}', '{{ room.status }}')" class="text-indigo-400 hover:underline font-semibold">
+                            Change Status
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="p-8 text-center text-slate-500">No rooms found. Click "+ Single Room" or "+ Bulk Add Rooms" to add rooms.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Single Room Creation -->
+<div id="addRoomModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-base font-bold text-white">Add Single Guest Room</h3>
+            <button onclick="closeModal('addRoomModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <form action="{% url 'rooms:create' %}" method="post" class="space-y-4 text-xs">
+            {% csrf_token %}
+            <div>
+                <label class="block font-semibold text-slate-400 mb-1">Room Number</label>
+                <input type="text" name="room_number" required placeholder="e.g. 101" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-400 mb-1">Room Type</label>
+                <select name="room_type_id" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                    {% for rt in room_types %}
+                    <option value="{{ rt.id }}">{{ rt.name }} (Cap: {{ rt.capacity }}, Price: {{ rt.default_price }} ETB)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-400 mb-1">Nightly Rate (ETB)</label>
+                <input type="number" step="0.01" name="price_per_night" placeholder="Default price will be used if blank" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+            </div>
+
+            <div class="pt-3 flex justify-end space-x-3">
+                <button type="button" onclick="closeModal('addRoomModal')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg font-semibold">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg">Save Room</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Bulk / Multiple Room Creation -->
+<div id="bulkAddModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-base font-bold text-white">Bulk Add Multiple Rooms</h3>
+            <button onclick="closeModal('bulkAddModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <form action="{% url 'rooms:bulk_create' %}" method="post" class="space-y-4 text-xs">
+            {% csrf_token %}
+            <div>
+                <label class="block font-semibold text-slate-400 mb-1">Room Type</label>
+                <select name="room_type_id" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                    {% for rt in room_types %}
+                    <option value="{{ rt.id }}">{{ rt.name }} (Cap: {{ rt.capacity }}, Default: {{ rt.default_price }} ETB)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-semibold text-slate-400 mb-1">Prefix (Optional)</label>
+                    <input type="text" name="prefix" placeholder="e.g. 10 or A-" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-400 mb-1">Start Number</label>
+                    <input type="number" name="start_number" value="1" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-semibold text-slate-400 mb-1">Total Rooms Count</label>
+                    <input type="number" name="count" min="1" max="100" value="10" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-400 mb-1">Floor (Optional)</label>
+                    <input type="text" name="floor" placeholder="e.g. 1st Floor" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-400 mb-1">Nightly Rate (ETB)</label>
+                <input type="number" step="0.01" name="price_per_night" placeholder="Leave blank to use Room Type default" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+            </div>
+
+            <div class="p-3 bg-indigo-950/40 border border-indigo-800/50 rounded-xl text-indigo-300 text-[11px]">
+                💡 Example: Prefix <b>10</b>, Start <b>1</b>, Count <b>10</b> creates rooms <b>101, 102, 103, ..., 110</b> at once.
+            </div>
+
+            <div class="pt-3 flex justify-end space-x-3">
+                <button type="button" onclick="closeModal('bulkAddModal')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg font-semibold">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-lg">Generate Rooms</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Change Status -->
+<div id="statusModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xs w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-base font-bold text-white">Room <span id="statusRoomNum"></span></h3>
+            <button onclick="closeModal('statusModal')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <form id="statusForm" method="post" class="space-y-4 text-xs">
+            {% csrf_token %}
+            <div>
+                <label class="block font-semibold text-slate-400 mb-1">Status</label>
+                <select name="status" id="statusVal" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                    <option value="vacant">Vacant</option>
+                    <option value="occupied">Occupied</option>
+                    <option value="cleaning">Cleaning</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="unavailable">Unavailable</option>
+                </select>
+            </div>
+
+            <div class="pt-3 flex justify-end space-x-3">
+                <button type="button" onclick="closeModal('statusModal')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg font-semibold">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-indigo-600 text-white font-bold rounded-lg shadow-lg">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function openStatusModal(id, num, status) {
+        document.getElementById('statusRoomNum').innerText = '#' + num;
+        document.getElementById('statusVal').value = status;
+        document.getElementById('statusForm').action = '/rooms/' + id + '/status/';
+        openModal('statusModal');
+    }
+</script>
+{% endblock %}

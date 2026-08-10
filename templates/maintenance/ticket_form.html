@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Maintenance Issue{% endblock %}
+{% block page_title %}Log Room Maintenance Ticket{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
+    <h3 class="text-base font-bold text-white mb-4 border-b border-slate-800 pb-3">Maintenance Details</h3>
+
+    <form method="post" class="space-y-4 text-xs">
+        {% csrf_token %}
+
+        <div>
+            <label class="block font-semibold text-slate-300 mb-1">Select Room to Lock Out</label>
+            <select name="room_id" required class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                {% for room in rooms %}
+                <option value="{{ room.id }}">Room #{{ room.room_number }} ({{ room.room_type.name }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label class="block font-semibold text-slate-300 mb-1">Problem Description</label>
+            <textarea name="description" required rows="3" placeholder="Plumbing repair, AC repair, light fixture replacement..." class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white"></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block font-semibold text-slate-300 mb-1">Priority Level</label>
+                <select name="priority" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent Lockout</option>
+                </select>
+            </div>
+            <div>
+                <label class="block font-semibold text-slate-300 mb-1">Estimated Cost (ETB)</label>
+                <input type="number" step="0.01" name="cost" value="0.00" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+            </div>
+        </div>
+
+        <div class="pt-3 flex justify-end space-x-3">
+            <a href="{% url 'maintenance:list' %}" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg font-semibold">Cancel</a>
+            <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg">Submit & Lock Room</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

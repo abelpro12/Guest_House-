@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Guest Records{% endblock %}
+{% block page_title %}Guest Directory{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <form method="get" class="flex items-center space-x-2 w-full sm:w-80">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search name, phone, ID..." class="w-full px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white text-xs">
+            <button type="submit" class="px-4 py-2 bg-slate-800 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700">Search</button>
+        </form>
+
+        <a href="{% url 'guests:create' %}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shrink-0">
+            + Register New Guest
+        </a>
+    </div>
+
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
+                <tr>
+                    <th class="p-3">Full Name</th>
+                    <th class="p-3">Phone</th>
+                    <th class="p-3">ID Document</th>
+                    <th class="p-3">Nationality</th>
+                    <th class="p-3">Registered Date</th>
+                    <th class="p-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800">
+                {% for guest in guests %}
+                <tr>
+                    <td class="p-3 font-bold text-white">{{ guest.full_name }}</td>
+                    <td class="p-3">{{ guest.phone_number }}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[11px] font-mono">
+                            {{ guest.get_id_document_type_display }}: {{ guest.id_document_number }}
+                        </span>
+                    </td>
+                    <td class="p-3">{{ guest.nationality }}</td>
+                    <td class="p-3 text-slate-400">{{ guest.created_at|date:"Y-m-d" }}</td>
+                    <td class="p-3">
+                        <a href="{% url 'guests:detail' guest_id=guest.id %}" class="text-indigo-400 hover:underline font-semibold">View History</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="p-6 text-center text-slate-500">No guests registered yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

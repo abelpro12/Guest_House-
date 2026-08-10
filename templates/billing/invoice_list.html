@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Invoices & Billing{% endblock %}
+{% block page_title %}Invoices Directory{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
+                <tr>
+                    <th class="p-3">Invoice #</th>
+                    <th class="p-3">Booking Ref</th>
+                    <th class="p-3">Guest</th>
+                    <th class="p-3">Total Amount</th>
+                    <th class="p-3">Amount Paid</th>
+                    <th class="p-3">Balance</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3">Action</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800">
+                {% for inv in invoices %}
+                <tr>
+                    <td class="p-3 font-mono text-indigo-400 font-bold"><a href="{% url 'billing:detail' invoice_id=inv.id %}" class="hover:underline">{{ inv.invoice_number }}</a></td>
+                    <td class="p-3 font-mono text-slate-300">{{ inv.booking.booking_reference }}</td>
+                    <td class="p-3 font-semibold text-white">{{ inv.booking.guest.full_name }}</td>
+                    <td class="p-3 font-bold text-white">{{ inv.total }} ETB</td>
+                    <td class="p-3 font-bold text-emerald-400">{{ inv.amount_paid }} ETB</td>
+                    <td class="p-3 font-bold text-amber-400">{{ inv.balance }} ETB</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase
+                            {% if inv.status == 'paid' %}bg-emerald-500/20 text-emerald-400
+                            {% elif inv.status == 'partially_paid' %}bg-amber-500/20 text-amber-400
+                            {% else %}bg-rose-500/20 text-rose-400{% endif %}">
+                            {{ inv.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="p-3">
+                        <a href="{% url 'billing:detail' invoice_id=inv.id %}" class="text-indigo-400 hover:underline">View Invoice</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="p-6 text-center text-slate-500">No invoices generated yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

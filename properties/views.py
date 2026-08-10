@@ -1,0 +1,166 @@
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import Property, PropertyStaff
+from accounts.models import CustomUser
+
+@login_required
+def select_property(request, property_id):
+    prop = get_object_or_404(Property, id=property_id)
+    # Check permissions
+    if request.user.is_admin or prop.investor == request.user or PropertyStaff.objects.filter(property=prop, user=request.user, is_active=True).exists():
+        request.session['selected_property_id'] = prop.id
+        request.session.modified = True
+        messages.success(request, f"Switched active property to {prop.property_name}")
+    else:
+        messages.error(request, "Permission denied for this property.")
+    return redirect('dashboard:index')
+
+@login_required
+def list_properties(request):
+    if request.user.is_admin:
+        props = Property.objects.all()
+    elif request.user.is_investor:
+        props = Property.objects.filter(investor=request.user)
+    else:
+        props = Property.objects.filter(staff_members__user=request.user)
+    return render(request, 'properties/property_list.html', {'properties': props})
+
+@login_required
+def create_property(request):
+    if not (request.user.is_admin or request.user.is_investor):
+        messages.error(request, "Permission denied.")
+        return redirect('dashboard:index')
+
+    if request.method == 'POST':
+        name = request.POST.get('property_name')
+        address = request.POST.get('address')
+        phone = request.POST.get('phone')
+        email = request.POST.get('email')
+        investor_id = request.POST.get('investor_id')
+
+        investor = request.user
+        if request.user.is_admin and investor_id:
+            investor = CustomUser.objects.filter(id=investor_id, role='investor').first() or request.user
+
+        prop = Property.objects.create(
+            property_name=name,
+            address=address,
+            phone=phone,
+            email=email,
+            investor=investor
+        )
+
+        # Trigger automatic 365-day free trial subscription creation
+        from subscriptions.models import PropertySubscription
+        from datetime import date, timedelta
+        PropertySubscription.objects.create(
+            property=prop,
+            investor=investor,
+            is_trial=True,
+            is_active=True,
+            start_date=date.today(),
+            expiry_date=date.today() + timedelta(days=365),
+            billing_period='annual'
+        )
+
+        messages.success(request, f"Property '{prop.property_name}' created with 365-day free trial!")
+        return redirect('properties:list')
+
+    investors = CustomUser.objects.filter(role='investor') if request.user.is_admin else None
+    return render(request, 'properties/property_form.html', {'investors': investors})
+
+
+@login_required
+def manage_staff(request):
+    """Allows Investor or Admin to view and assign Receptionist staff to properties."""
+    if not (request.user.is_admin or request.user.is_investor):
+        messages.error(request, "Permission denied.")
+        return redirect('dashboard:index')
+
+    if request.user.is_admin:
+        properties = Property.objects.filter(is_active=True)
+        staff_members = PropertyStaff.objects.all().select_related('property', 'user')
+    else:
+        properties = Property.objects.filter(investor=request.user, is_active=True)
+        staff_members = PropertyStaff.objects.filter(property__investor=request.user).select_related('property', 'user')
+
+    receptionists = CustomUser.objects.filter(role='receptionist')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'assign_existing':
+            user_id = request.POST.get('user_id')
+            property_id = request.POST.get('property_id')
+            
+            target_user = get_object_or_404(CustomUser, id=user_id, role='receptionist')
+            target_prop = get_object_or_404(Property, id=property_id)
+            
+            if not request.user.is_admin and target_prop.investor != request.user:
+                messages.error(request, "Permission denied.")
+                return redirect('properties:staff')
+
+            staff_obj, created = PropertyStaff.objects.get_or_create(
+                property=target_prop,
+                user=target_user,
+                defaults={'role': 'receptionist', 'is_active': True}
+            )
+            if not created:
+                staff_obj.is_active = True
+                staff_obj.save()
+
+            messages.success(request, f"Receptionist {target_user.username} assigned to {target_prop.property_name}.")
+            return redirect('properties:staff')
+
+        elif action == 'create_new':
+            username = request.POST.get('username')
+            password = request.POST.get('password')
+            email = request.POST.get('email', '')
+            property_id = request.POST.get('property_id')
+
+            target_prop = get_object_or_404(Property, id=property_id)
+            if not request.user.is_admin and target_prop.investor != request.user:
+                messages.error(request, "Permission denied.")
+                return redirect('properties:staff')
+
+            if CustomUser.objects.filter(username=username).exists():
+                messages.error(request, f"Username '{username}' already exists.")
+                return redirect('properties:staff')
+
+            new_user = CustomUser.objects.create_user(
+                username=username,
+                password=password,
+                email=email,
+                role='receptionist'
+            )
+
+            PropertyStaff.objects.create(
+                property=target_prop,
+                user=new_user,
+                role='receptionist',
+                is_active=True
+            )
+
+            messages.success(request, f"Created new Receptionist '{username}' and assigned to {target_prop.property_name}!")
+            return redirect('properties:staff')
+
+    return render(request, 'properties/staff_management.html', {
+        'properties': properties,
+        'staff_members': staff_members,
+        'receptionists': receptionists
+    })
+
+
+@login_required
+def remove_staff(request, staff_id):
+    staff_record = get_object_or_404(PropertyStaff, id=staff_id)
+    if not (request.user.is_admin or staff_record.property.investor == request.user):
+        messages.error(request, "Permission denied.")
+        return redirect('dashboard:index')
+
+    prop_name = staff_record.property.property_name
+    username = staff_record.user.username
+    staff_record.delete()
+    messages.success(request, f"Removed Receptionist '{username}' from {prop_name}.")
+    return redirect('properties:staff')

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}System Audit Logs{% endblock %}
+{% block page_title %}Security & System Audit Log Trail{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
+                <tr>
+                    <th class="p-3">Timestamp</th>
+                    <th class="p-3">User</th>
+                    <th class="p-3">Action</th>
+                    <th class="p-3">Model</th>
+                    <th class="p-3">Object ID</th>
+                    <th class="p-3">Details / Value Change</th>
+                    <th class="p-3">IP Address</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800">
+                {% for log in logs %}
+                <tr>
+                    <td class="p-3 font-mono text-slate-400">{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                    <td class="p-3 font-bold text-white">{{ log.user.username|default:"System" }}</td>
+                    <td class="p-3 font-semibold text-indigo-400">{{ log.action }}</td>
+                    <td class="p-3 text-slate-400">{{ log.model_name|default:"-" }}</td>
+                    <td class="p-3 font-mono text-slate-400">{{ log.object_id|default:"-" }}</td>
+                    <td class="p-3 text-slate-200">{{ log.new_value|default:log.old_value|default:"-" }}</td>
+                    <td class="p-3 font-mono text-slate-500">{{ log.ip_address|default:"127.0.0.1" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="p-6 text-center text-slate-500">No audit records found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

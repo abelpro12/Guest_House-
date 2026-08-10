@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Staff Management & Property Assignment{% endblock %}
+{% block page_title %}Receptionist Staff Assignments{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Banner -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+            <h3 class="text-xl font-bold text-white">Receptionist Staff Directory & Assignments</h3>
+            <p class="text-xs text-slate-400 mt-1">Assign receptionists to properties or transfer staff between your guest house properties.</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button onclick="document.getElementById('assignModal').classList.remove('hidden')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-1">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>Assign Existing Receptionist</span>
+            </button>
+            <button onclick="document.getElementById('createModal').classList.remove('hidden')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-1">
+                <i class="fa-solid fa-plus"></i>
+                <span>Create New Receptionist</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Active Staff Assignments Table -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <div class="p-4 border-b border-slate-800 bg-slate-950 flex items-center justify-between">
+            <h4 class="text-sm font-bold text-white uppercase tracking-wider">Active Staff Property Assignments</h4>
+            <span class="text-xs text-slate-400 font-mono">{{ staff_members.count }} Assignment(s)</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-950 text-slate-400 border-b border-slate-800 uppercase font-semibold">
+                        <th class="p-3">Receptionist User</th>
+                        <th class="p-3">Email</th>
+                        <th class="p-3">Assigned Property</th>
+                        <th class="p-3">Role</th>
+                        <th class="p-3">Status</th>
+                        <th class="p-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800 text-slate-300">
+                    {% for s in staff_members %}
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="p-3 font-extrabold text-white flex items-center space-x-2">
+                            <div class="w-7 h-7 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs">
+                                {{ s.user.username|first|upper }}
+                            </div>
+                            <span>{{ s.user.username }}</span>
+                        </td>
+                        <td class="p-3 text-slate-400">{{ s.user.email|default:"N/A" }}</td>
+                        <td class="p-3 font-bold text-indigo-400">
+                            <i class="fa-solid fa-hotel mr-1 text-slate-500"></i>{{ s.property.property_name }}
+                        </td>
+                        <td class="p-3 uppercase font-bold text-[10px] text-slate-400">{{ s.role }}</td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {% if s.is_active %}bg-emerald-500/20 text-emerald-400{% else %}bg-rose-500/20 text-rose-400{% endif %}">
+                                {% if s.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </td>
+                        <td class="p-3 flex items-center space-x-3">
+                            <a href="{% url 'accounts:edit_user' user_id=s.user.id %}" class="text-amber-400 hover:underline font-semibold">
+                                <i class="fa-solid fa-user-gear mr-1"></i>Edit Settings
+                            </a>
+                            <a href="{% url 'properties:remove_staff' staff_id=s.id %}" onclick="return confirm('Remove {{ s.user.username }} from {{ s.property.property_name }}?')" class="text-rose-400 hover:underline font-semibold">
+                                <i class="fa-solid fa-user-minus mr-1"></i>Remove
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="p-8 text-center text-slate-500">
+                            No receptionist staff assignments found. Click "Assign Existing" or "Create New" to link staff to properties.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Assign Existing Modal -->
+<div id="assignModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-base font-bold text-white">Assign Existing Receptionist</h3>
+            <button onclick="document.getElementById('assignModal').classList.add('hidden')" class="text-slate-400 hover:text-white">✕</button>
+        </div>
+
+        <form method="POST" action="{% url 'properties:staff' %}" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="assign_existing">
+
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">Select Receptionist Account</label>
+                <select name="user_id" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs">
+                    {% for r in receptionists %}
+                    <option value="{{ r.id }}">{{ r.username }} ({{ r.email|default:"No email" }})</option>
+                    {% empty %}
+                    <option value="" disabled>No receptionist accounts available. Create one first.</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">Assign to Property</label>
+                <select name="property_id" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs">
+                    {% for p in properties %}
+                    <option value="{{ p.id }}">{{ p.property_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-2">
+                <button type="button" onclick="document.getElementById('assignModal').classList.add('hidden')" class="px-4 py-2 bg-slate-800 text-slate-300 font-bold text-xs rounded-xl">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg">Save Assignment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Create New Modal -->
+<div id="createModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-base font-bold text-white">Create New Receptionist Account</h3>
+            <button onclick="document.getElementById('createModal').classList.add('hidden')" class="text-slate-400 hover:text-white">✕</button>
+        </div>
+
+        <form method="POST" action="{% url 'properties:staff' %}" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create_new">
+
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">Username</label>
+                <input type="text" name="username" required placeholder="e.g. recep_kebede" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">Password</label>
+                <input type="password" name="password" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">Email Address (Optional)</label>
+                <input type="email" name="email" placeholder="staff@guesthouse.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">Assign to Property</label>
+                <select name="property_id" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs">
+                    {% for p in properties %}
+                    <option value="{{ p.id }}">{{ p.property_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-2">
+                <button type="button" onclick="document.getElementById('createModal').classList.add('hidden')" class="px-4 py-2 bg-slate-800 text-slate-300 font-bold text-xs rounded-xl">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg">Create & Assign</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

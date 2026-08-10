@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Guest House Management System{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="h-full text-slate-100 antialiased bg-slate-950 flex flex-col md:flex-row">
+
+    {% if user.is_authenticated %}
+    <!-- Sidebar Navigation -->
+    <aside id="mainSidebar" class="w-full md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 hidden md:flex">
+        <!-- Brand Header -->
+        <div class="h-16 px-6 flex items-center justify-between border-b border-slate-800">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-hotel text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-sm text-white tracking-wide leading-none">GUEST HOUSE</h1>
+                    <span class="text-[10px] text-indigo-400 font-semibold tracking-wider uppercase">Manager v1.0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Property Switcher -->
+        {% if current_property or user_properties %}
+        <div class="p-4 border-b border-slate-800 bg-slate-900/50 relative">
+            <label class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Active Property</label>
+            
+            <!-- Card Trigger -->
+            <div onclick="togglePropertyDropdown(event)"
+                 class="bg-slate-800/80 hover:bg-slate-800 p-2.5 rounded-lg border border-slate-700 hover:border-indigo-500/50 flex items-center justify-between cursor-pointer transition-all select-none">
+                <div class="truncate pr-2 pointer-events-none">
+                    <div class="font-medium text-xs text-white truncate">{{ current_property.property_name|default:"Select Property" }}</div>
+                    {% if current_property %}
+                        {% if current_property.investor and not current_property.investor.is_active %}
+                        <span class="inline-block text-[10px] text-rose-400 font-extrabold"><i class="fa-solid fa-user-slash mr-1"></i>Investor Deactivated</span>
+                        {% elif current_property.subscription and current_property.subscription.is_expired %}
+                        <span class="inline-block text-[10px] text-red-400 font-semibold"><i class="fa-solid fa-circle-exclamation mr-1"></i>Expired</span>
+                        {% elif current_property.subscription %}
+                        <span class="inline-block text-[10px] text-emerald-400 font-semibold"><i class="fa-solid fa-shield-check mr-1"></i>Trial ({{ current_property.subscription.days_remaining }}d)</span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <div class="text-xs text-indigo-400 pointer-events-none p-1 flex-shrink-0">
+                    <i class="fa-solid fa-arrows-up-down"></i>
+                </div>
+            </div>
+
+            <!-- Custom Floating Dropdown Menu -->
+            <div id="propertyDropdownMenu" class="hidden absolute left-4 right-4 mt-2 bg-slate-900 border border-slate-700 shadow-2xl rounded-xl overflow-hidden z-50 divide-y divide-slate-800 max-h-60 overflow-y-auto">
+                <div class="px-3 py-2 bg-slate-950 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Select Active Property
+                </div>
+                {% for p in user_properties %}
+                <a href="{% url 'properties:select' property_id=p.id %}"
+                   class="block px-3 py-2.5 text-xs font-semibold text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors flex items-center justify-between {% if current_property and current_property.id == p.id %}bg-indigo-950/40 text-indigo-400 border-l-2 border-indigo-500{% endif %}">
+                    <div class="truncate">
+                        <div>{{ p.property_name }}</div>
+                        {% if p.investor and not p.investor.is_active %}
+                        <span class="text-[9px] text-rose-400 font-extrabold block">● Inactive (Owner Deactivated)</span>
+                        {% elif p.subscription and p.subscription.is_expired %}
+                        <span class="text-[9px] text-amber-400 font-bold block">● Expired Subscription</span>
+                        {% else %}
+                        <span class="text-[9px] text-emerald-400 font-bold block">● Active Property</span>
+                        {% endif %}
+                    </div>
+                    {% if current_property and current_property.id == p.id %}
+                    <i class="fa-solid fa-check text-indigo-400 text-xs"></i>
+                    {% endif %}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Navigation Links -->
+        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            <a href="{% url 'dashboard:index' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'dashboard' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-chart-pie w-6 text-sm"></i> Dashboard
+            </a>
+
+            {% if user.is_receptionist or user.is_investor or user.is_admin %}
+            <a href="{% url 'rooms:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'rooms' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-door-closed w-6 text-sm"></i> Rooms Grid
+            </a>
+            <a href="{% url 'bookings:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'bookings' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-calendar-check w-6 text-sm"></i> Reservations
+            </a>
+            <a href="{% url 'guests:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'guests' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-users w-6 text-sm"></i> Guest Records
+            </a>
+            <a href="{% url 'billing:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'billing' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-file-invoice-dollar w-6 text-sm"></i> Invoices
+            </a>
+            <a href="{% url 'payments:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'payments' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-credit-card w-6 text-sm"></i> Payments & Ledger
+            </a>
+            <a href="{% url 'shifts:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'shifts' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-cash-register w-6 text-sm"></i> Shift Register
+            </a>
+            <a href="{% url 'housekeeping:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'housekeeping' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-broom w-6 text-sm"></i> Housekeeping
+            </a>
+            <a href="{% url 'maintenance:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'maintenance' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-screwdriver-wrench w-6 text-sm"></i> Maintenance
+            </a>
+            {% endif %}
+
+            {% if user.is_investor or user.is_admin %}
+            <a href="{% url 'reports:index' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'reports' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-chart-line w-6 text-sm"></i> Financial Reports
+            </a>
+            <a href="{% url 'audit:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'audit' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-shield-halved w-6 text-sm"></i> Audit Logs
+            </a>
+            {% endif %}
+
+            <a href="{% url 'properties:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'properties' and request.resolver_match.url_name != 'staff' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-building w-6 text-sm"></i> Properties
+            </a>
+
+            {% if user.is_investor or user.is_admin %}
+            <a href="{% url 'properties:staff' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.url_name == 'staff' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-users-gear w-6 text-sm text-indigo-400"></i> Staff & Assignments
+            </a>
+            {% endif %}
+
+            {% if user.is_admin %}
+            <a href="{% url 'accounts:investors' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.url_name == 'investors' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-user-tie w-6 text-sm text-emerald-400"></i> Investors Directory
+            </a>
+            {% endif %}
+
+            {% if current_property %}
+            <a href="{% url 'subscriptions:status' property_id=current_property.id %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'subscriptions' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-crown w-6 text-sm text-amber-400"></i> Subscription
+            </a>
+            {% endif %}
+        </nav>
+
+        <!-- User Footer Profile -->
+        <div class="p-3 border-t border-slate-800 bg-slate-900/60 flex items-center justify-between">
+            <div class="flex items-center space-x-3 overflow-hidden">
+                <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-xs text-white">
+                    {{ user.username|slice:":2"|upper }}
+                </div>
+                <div class="truncate">
+                    <div class="text-xs font-semibold text-white truncate">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">{{ user.get_role_display }}</div>
+                </div>
+            </div>
+            <a href="{% url 'accounts:logout' %}" class="text-slate-400 hover:text-red-400 p-2 rounded-lg transition-colors" title="Logout">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </a>
+        </div>
+    </aside>
+    {% endif %}
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        <!-- Top Header Bar -->
+        <header class="h-16 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-4 md:px-6 flex items-center justify-between shrink-0">
+            <div class="flex items-center space-x-3">
+                <button onclick="toggleMobileSidebar()" class="md:hidden text-slate-400 hover:text-white p-2 focus:outline-none rounded-lg hover:bg-slate-800">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+                <h2 class="text-sm md:text-base font-bold text-white tracking-wide">{% block page_title %}Dashboard{% endblock %}</h2>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                {% if user.is_authenticated %}
+                <a href="{% url 'accounts:profile' %}" class="text-xs font-semibold text-slate-300 hover:text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span>Profile</span>
+                </a>
+                {% else %}
+                <a href="{% url 'accounts:login' %}" class="text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg transition-all">Sign In</a>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- Django Toast Messages -->
+        {% if messages %}
+        <div class="px-6 pt-4 space-y-2">
+            {% for message in messages %}
+            <div class="p-4 rounded-xl border text-xs font-semibold flex items-center justify-between shadow-lg transition-all {% if message.tags == 'error' %}bg-red-950/80 border-red-800/80 text-red-200{% elif message.tags == 'success' %}bg-emerald-950/80 border-emerald-800/80 text-emerald-200{% elif message.tags == 'warning' %}bg-amber-950/80 border-amber-800/80 text-amber-200{% else %}bg-indigo-950/80 border-indigo-800/80 text-indigo-200{% endif %}">
+                <div class="flex items-center space-x-3">
+                    <i class="fa-solid {% if message.tags == 'error' %}fa-circle-xmark text-red-400{% elif message.tags == 'success' %}fa-circle-check text-emerald-400{% else %}fa-circle-info text-indigo-400{% endif %} text-base"></i>
+                    <span>{{ message }}</span>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Body Content -->
+        <main class="flex-1 overflow-y-auto p-6">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            if (sidebar) {
+                sidebar.classList.toggle('hidden');
+            }
+        }
+
+        function togglePropertyDropdown(e) {
+            e.stopPropagation();
+            const menu = document.getElementById('propertyDropdownMenu');
+            if (menu) {
+                menu.classList.toggle('hidden');
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('propertyDropdownMenu');
+            if (menu && !menu.classList.contains('hidden')) {
+                menu.classList.add('hidden');
+            }
+        });
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

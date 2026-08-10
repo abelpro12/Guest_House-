@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Property Subscription Status{% endblock %}
+{% block page_title %}Subscription License & Annual Renewal{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+    <!-- Status Card -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl space-y-6">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div>
+                <h3 class="text-xl font-bold text-white">{{ property.property_name }}</h3>
+                <p class="text-xs text-slate-400">License & Billing Management</p>
+            </div>
+            <span class="px-3.5 py-1 rounded-full text-xs font-bold uppercase
+                {% if subscription.is_expired %}bg-rose-500/20 text-rose-400 border border-rose-500/30
+                {% elif subscription.is_trial %}bg-amber-500/20 text-amber-400 border border-amber-500/30
+                {% else %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30{% endif %}">
+                {% if subscription.is_expired %}EXPIRED{% elif subscription.is_trial %}FREE TRIAL{% else %}ACTIVE LICENSE{% endif %}
+            </span>
+        </div>
+
+        <!-- Investor Account Deactivated Alert -->
+        {% if property.investor and not property.investor.is_active %}
+        <div class="p-4 rounded-xl bg-rose-950/80 border border-rose-800/80 text-xs text-rose-200 flex items-center space-x-3">
+            <i class="fa-solid fa-user-slash text-rose-400 text-lg"></i>
+            <div>
+                <span class="font-bold">Investor Account Deactivated</span>
+                <p class="mt-0.5">This property is currently inactive because the investor account (<b>@{{ property.investor.username }}</b>) has been deactivated by Super Admin.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Expiry Warning Alert -->
+        {% if subscription.days_remaining <= 30 %}
+        <div class="p-4 rounded-xl bg-amber-950/40 border border-amber-800/60 text-xs text-amber-200 flex items-center space-x-3">
+            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-lg"></i>
+            <div>
+                <span class="font-bold">Subscription Expiring Soon!</span>
+                <p class="mt-0.5">Your license ends in <b>{{ subscription.days_remaining }} days</b> on {{ subscription.expiry_date }}. Please renew via Chapa to prevent property operations lockout.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="space-y-3 text-xs bg-slate-800/40 p-5 rounded-xl border border-slate-800">
+            <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-400">Start Date:</span> <span class="text-white font-bold">{{ subscription.start_date }}</span></div>
+            <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-400">Expiry Date:</span> <span class="text-white font-bold">{{ subscription.expiry_date }}</span></div>
+            <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-400">Billing Period:</span> <span class="text-indigo-400 font-bold uppercase">{{ subscription.get_billing_period_display }}</span></div>
+            <div class="flex justify-between py-1 border-b border-slate-800"><span class="text-slate-400">Subscription Fee:</span> <span class="text-emerald-400 font-extrabold text-sm">{{ subscription.subscription_fee }} ETB</span></div>
+            <div class="flex justify-between py-1"><span class="text-slate-400">Payment Gateway:</span> <span class="text-indigo-400 font-bold">Chapa (Telebirr, Cards, CBE)</span></div>
+        </div>
+
+        <!-- Investor Pay Button -->
+        <form action="{% url 'subscriptions:checkout' subscription_id=subscription.id %}" method="post" class="pt-2">
+            {% csrf_token %}
+            <button type="submit" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center space-x-2 transition-all">
+                <i class="fa-solid fa-credit-card text-base"></i>
+                <span>Pay Subscription Fee ({{ subscription.subscription_fee }} ETB via Chapa)</span>
+            </button>
+        </form>
+
+        <!-- Admin Control Panel (Visible ONLY to Platform Admin) -->
+        {% if user.is_admin %}
+        <div class="mt-8 pt-6 border-t border-slate-800 space-y-4">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-crown text-amber-400"></i>
+                <h4 class="text-sm font-bold text-white uppercase tracking-wider">Super Admin Subscription Override Panel</h4>
+            </div>
+
+            <div class="bg-indigo-950/30 border border-indigo-800/50 rounded-xl p-5 space-y-5 text-xs">
+                <!-- Action 1: Multi-Duration Extension -->
+                <div>
+                    <label class="block font-bold text-slate-300 mb-2">Extend Subscription Validity Duration</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <form method="POST" action="{% url 'subscriptions:admin_manage' subscription_id=subscription.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="extend_days">
+                            <input type="hidden" name="days" value="30">
+                            <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg shadow">
+                                + 1 Month (30d)
+                            </button>
+                        </form>
+                        <form method="POST" action="{% url 'subscriptions:admin_manage' subscription_id=subscription.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="extend_days">
+                            <input type="hidden" name="days" value="90">
+                            <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg shadow">
+                                + 3 Months (90d)
+                            </button>
+                        </form>
+                        <form method="POST" action="{% url 'subscriptions:admin_manage' subscription_id=subscription.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="extend_days">
+                            <input type="hidden" name="days" value="180">
+                            <button type="submit" class="w-full py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-lg shadow">
+                                + 6 Months (180d)
+                            </button>
+                        </form>
+                        <form method="POST" action="{% url 'subscriptions:admin_manage' subscription_id=subscription.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="extend_days">
+                            <input type="hidden" name="days" value="365">
+                            <button type="submit" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow">
+                                + 1 Year (365d)
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Action 2: Edit Subscription Fee -->
+                <div class="pt-3 border-t border-indigo-900/60">
+                    <label class="block font-bold text-slate-300 mb-1.5">Edit Property Subscription Fee (ETB)</label>
+                    <form method="POST" action="{% url 'subscriptions:admin_manage' subscription_id=subscription.id %}" class="flex items-center space-x-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_fee">
+                        <input type="number" step="0.01" name="subscription_fee" value="{{ subscription.subscription_fee }}" required class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-bold text-xs w-48">
+                        <button type="submit" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-lg shadow">
+                            Save New Fee
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Action 3: Toggle Active / Expired -->
+                <div class="pt-3 border-t border-indigo-900/60 flex items-center justify-between">
+                    <div>
+                        <span class="font-bold text-slate-300">Status Control:</span>
+                        <span class="ml-1 text-slate-400">Currently {% if subscription.is_active %}Active{% else %}Suspended{% endif %}</span>
+                    </div>
+                    <form method="POST" action="{% url 'subscriptions:admin_manage' subscription_id=subscription.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="toggle_active">
+                        <button type="submit" class="px-3 py-1.5 {% if subscription.is_active %}bg-rose-600 hover:bg-rose-500{% else %}bg-emerald-600 hover:bg-emerald-500{% endif %} text-white font-bold text-xs rounded-lg shadow">
+                            {% if subscription.is_active %}Suspend Subscription{% else %}Activate Subscription{% endif %}
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Action 4: Toggle Plan Type -->
+                <div class="pt-3 border-t border-indigo-900/60 flex items-center justify-between">
+                    <div>
+                        <span class="font-bold text-slate-300">Plan Type:</span>
+                        <span class="ml-1 text-slate-400">Currently {% if subscription.is_trial %}Free Trial{% else %}Paid License{% endif %}</span>
+                    </div>
+                    <form method="POST" action="{% url 'subscriptions:admin_manage' subscription_id=subscription.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="toggle_trial">
+                        <button type="submit" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-lg shadow">
+                            Switch to {% if subscription.is_trial %}Paid License{% else %}Free Trial{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

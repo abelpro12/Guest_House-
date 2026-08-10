@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Property Investor Directory{% endblock %}
+{% block page_title %}Platform Investor Management{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Banner -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+            <h3 class="text-xl font-bold text-white">Registered Property Investors (Owners)</h3>
+            <p class="text-xs text-slate-400 mt-1">Manage guest house business owners, register new investors, and monitor property portfolios.</p>
+        </div>
+        <button onclick="document.getElementById('addInvestorModal').classList.remove('hidden')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-1">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>+ Add New Investor</span>
+        </button>
+    </div>
+
+    <!-- Investors Directory Table -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <div class="p-4 border-b border-slate-800 bg-slate-950 flex items-center justify-between">
+            <h4 class="text-sm font-bold text-white uppercase tracking-wider">Investors Directory</h4>
+            <span class="text-xs text-slate-400 font-mono">{{ investors.count }} Investor Account(s)</span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-950 text-slate-400 border-b border-slate-800 uppercase font-semibold">
+                        <th class="p-3">Investor Name</th>
+                        <th class="p-3">Username</th>
+                        <th class="p-3">Account Status</th>
+                        <th class="p-3">Contact</th>
+                        <th class="p-3">Properties Portfolio & Status</th>
+                        <th class="p-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800 text-slate-300">
+                    {% for inv in investors %}
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="p-3 font-extrabold text-white flex items-center space-x-2">
+                            <div class="w-8 h-8 rounded-full {% if inv.is_active %}bg-emerald-500/20 text-emerald-400{% else %}bg-rose-500/20 text-rose-400{% endif %} flex items-center justify-center font-bold text-xs">
+                                {{ inv.username|first|upper }}
+                            </div>
+                            <div>
+                                <div>{{ inv.get_full_name|default:inv.username }}</div>
+                                <span class="text-[10px] text-slate-500">Joined: {{ inv.date_joined|date:"M d, Y" }}</span>
+                            </div>
+                        </td>
+                        <td class="p-3 font-mono text-indigo-400 font-bold">@{{ inv.username }}</td>
+                        <td class="p-3">
+                            {% if inv.is_active %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                <i class="fa-solid fa-circle text-[6px] mr-1.5 animate-pulse"></i>Active
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                                <i class="fa-solid fa-circle-xmark mr-1"></i>Deactivated
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="p-3 text-slate-300">
+                            <div>{{ inv.email|default:"No email" }}</div>
+                            <div class="text-[10px] text-slate-400 font-mono mt-0.5">{{ inv.phone_number|default:"No phone" }}</div>
+                        </td>
+                        <td class="p-3">
+                            {% for p in inv.owned_properties.all %}
+                            <div class="inline-flex items-center space-x-1.5 px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg text-[10px] font-bold mr-1 mb-1 border border-slate-700">
+                                <i class="fa-solid fa-hotel text-indigo-400"></i>
+                                <span>{{ p.property_name }}</span>
+                                {% if not inv.is_active %}
+                                <span class="text-rose-400 font-extrabold text-[9px] uppercase ml-1 px-1.5 py-0.2 bg-rose-950/60 rounded border border-rose-800">Inactive</span>
+                                {% elif p.subscription and p.subscription.is_expired %}
+                                <span class="text-amber-400 font-extrabold text-[9px] uppercase ml-1 px-1.5 py-0.2 bg-amber-950/60 rounded border border-amber-800">Expired</span>
+                                {% else %}
+                                <span class="text-emerald-400 font-extrabold text-[9px] uppercase ml-1 px-1.5 py-0.2 bg-emerald-950/60 rounded border border-emerald-800">Active</span>
+                                {% endif %}
+                            </div>
+                            {% empty %}
+                            <span class="text-slate-500 italic">No properties assigned</span>
+                            {% endfor %}
+                        </td>
+                        <td class="p-3 flex items-center space-x-2">
+                            <a href="{% url 'accounts:edit_user' user_id=inv.id %}" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-[11px] font-bold border border-slate-700">
+                                <i class="fa-solid fa-user-gear mr-1 text-amber-400"></i>Edit Settings
+                            </a>
+                            <a href="{% url 'properties:create' %}?investor_id={{ inv.id }}" class="px-2.5 py-1 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded text-[11px] font-bold">
+                                + Add Property
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="p-8 text-center text-slate-500">
+                            No investor accounts found. Click "+ Add New Investor" to register a guest house owner.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal: Add New Investor -->
+<div id="addInvestorModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-base font-bold text-white">Register New Property Investor (Owner)</h3>
+            <button onclick="document.getElementById('addInvestorModal').classList.add('hidden')" class="text-slate-400 hover:text-white">✕</button>
+        </div>
+
+        <form method="POST" action="{% url 'accounts:create_investor' %}" class="space-y-4 text-xs">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-400 mb-1">First Name</label>
+                    <input type="text" name="first_name" placeholder="e.g. Kebede" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-400 mb-1">Last Name</label>
+                    <input type="text" name="last_name" placeholder="e.g. Tessema" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs">
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-400 mb-1">Username (Login ID)</label>
+                <input type="text" name="username" required placeholder="e.g. kebede_owner" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs">
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-400 mb-1">Password</label>
+                <input type="password" name="password" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-400 mb-1">Email Address</label>
+                    <input type="email" name="email" placeholder="owner@guesthouse.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-400 mb-1">Phone Number</label>
+                    <input type="text" name="phone_number" placeholder="0911XXXXXX" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs">
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-2">
+                <button type="button" onclick="document.getElementById('addInvestorModal').classList.add('hidden')" class="px-4 py-2 bg-slate-800 text-slate-300 font-bold text-xs rounded-xl">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg">Register Investor</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

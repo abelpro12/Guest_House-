@@ -23,8 +23,25 @@
                 <span>Mark All Staff Present</span>
             </a>
 
+            {% if user.is_admin or user.is_investor %}
+            <!-- Property Selector Dropdown for Admin & Investor -->
+            <form method="GET" action="{% url 'attendance_direct' %}" class="flex items-center space-x-2">
+                <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                <select name="property_id" onchange="this.form.submit()" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-indigo-400 font-bold text-xs">
+                    {% for p in user_properties %}
+                    <option value="{{ p.id }}" {% if p.id == property.id %}selected{% endif %}>
+                        🏨 {{ p.property_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+            {% endif %}
+
             <!-- Date Selector Form -->
             <form method="GET" action="{% url 'attendance_direct' %}" class="flex items-center space-x-2">
+                {% if request.GET.property_id %}
+                <input type="hidden" name="property_id" value="{{ request.GET.property_id }}">
+                {% endif %}
                 <input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}" onchange="this.form.submit()" class="px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs font-medium">
                 <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md">
                     Filter Date

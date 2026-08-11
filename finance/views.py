@@ -10,9 +10,14 @@ from billing.models import Invoice
 from accounts.models import CustomUser
 
 def get_current_property(request):
-    prop_id = request.session.get('current_property_id')
+    prop_id = request.GET.get('property_id') or request.session.get('current_property_id')
     if prop_id:
-        return Property.objects.filter(id=prop_id).first()
+        p = Property.objects.filter(id=prop_id).first()
+        if p:
+            request.session['current_property_id'] = p.id
+            return p
+    if hasattr(request, 'current_property') and request.current_property:
+        return request.current_property
     return Property.objects.first()
 
 @login_required

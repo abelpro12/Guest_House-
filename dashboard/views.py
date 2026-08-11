@@ -228,3 +228,11 @@ def global_search(request):
         'rooms': rooms,
         'property': prop
     })
+
+
+def switch_language(request, lang_code):
+    """Switches the session language between English ('en') and Amharic ('am')."""
+    if lang_code in ['en', 'am']:
+        request.session['site_language'] = lang_code
+    next_url = request.META.get('HTTP_REFERER', '/')
+    return redirect(next_url)

@@ -342,6 +342,16 @@
                     <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                 </form>
 
+                <!-- Language Switcher Toggle Pill -->
+                <div class="flex items-center bg-slate-800 border border-slate-700 rounded-xl p-0.5 text-[11px] font-bold">
+                    <a href="{% url 'dashboard:switch_language' lang_code='en' %}" class="px-2 py-1 rounded-lg transition-all {% if current_language != 'am' %}bg-indigo-600 text-white shadow{% else %}text-slate-400 hover:text-white{% endif %}">
+                        EN
+                    </a>
+                    <a href="{% url 'dashboard:switch_language' lang_code='am' %}" class="px-2 py-1 rounded-lg transition-all {% if current_language == 'am' %}bg-indigo-600 text-white shadow{% else %}text-slate-400 hover:text-white{% endif %}">
+                        አማርኛ
+                    </a>
+                </div>
+
                 <!-- Current property badge (mobile) -->
                 {% if current_property %}
                 <span class="md:hidden text-[10px] font-semibold text-indigo-400 bg-indigo-950/50 border border-indigo-800/50 px-2 py-1 rounded-lg max-w-[100px] truncate hidden sm:inline-block">
@@ -353,6 +363,15 @@
                     <span class="hidden sm:inline">Profile</span>
                 </a>
                 {% else %}
+                <!-- Public Language Switcher -->
+                <div class="flex items-center bg-slate-800 border border-slate-700 rounded-xl p-0.5 text-[11px] font-bold mr-2">
+                    <a href="{% url 'dashboard:switch_language' lang_code='en' %}" class="px-2 py-1 rounded-lg transition-all {% if current_language != 'am' %}bg-indigo-600 text-white shadow{% else %}text-slate-400 hover:text-white{% endif %}">
+                        EN
+                    </a>
+                    <a href="{% url 'dashboard:switch_language' lang_code='am' %}" class="px-2 py-1 rounded-lg transition-all {% if current_language == 'am' %}bg-indigo-600 text-white shadow{% else %}text-slate-400 hover:text-white{% endif %}">
+                        አማርኛ
+                    </a>
+                </div>
                 <a href="{% url 'accounts:login' %}" class="text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg transition-all">Sign In</a>
                 {% endif %}
             </div>
@@ -484,6 +503,57 @@
                     }
                 });
             });
+
+            {% if current_language == 'am' %}
+            // ── Client-side Amharic Translation Engine ────────────────────────
+            const amharicDict = {
+                'Dashboard': 'ዳሽቦርድ',
+                'Bookings Overview': 'የቦታ ማስያዝ አጠቃላይ እይታ',
+                'Bookings & Stays': 'የተያዙ ክፍሎች',
+                'Rooms & Rates': 'ክፍሎች እና ዋጋዎች',
+                'Guest Records': 'የእንግዶች መዝገብ',
+                'Invoices': 'ደረሰኞች',
+                'Payments & Ledger': 'ክፍያዎች እና ሌጀር',
+                'Shift Register': 'የሺፍት መዝገብ',
+                'Housekeeping': 'የክፍል ጽዳት',
+                'Maintenance': 'የጥገና ሥራዎች',
+                'Staff Attendance': 'የሰራተኞች መገኘት',
+                'Finance & Accounting': 'የፋይናንስ እና ሂሳብ',
+                'Financial Reports': 'የፋይናንስ ሪፖርቶች',
+                'Audit Logs': 'ኦዲት ሎግ',
+                'Properties': 'ሆቴሎች/ቪላዎች',
+                'Staff & Assignments': 'ሰራተኞች እና ኃላፊነቶች',
+                'Investors Directory': 'የኢንቨስተሮች ማውጫ',
+                'Subscription': 'ምዝገባ',
+                'Profile': 'ፕሮፋይል',
+                'Sign Out': 'ውጡ',
+                'Sign In': 'ግቡ',
+                'Check-In': 'ቼክ-ኢን',
+                'Check-Out': 'ቼክ-አውት',
+                'Vacant': 'ክፍት',
+                'Occupied': 'የተያዘ',
+                'Cleaning': 'ጽዳት ላይ',
+                'Unpaid': 'ያልተከፈለ',
+                'Paid': 'የተከፈለ',
+                'Partially Paid': 'በከፊል የተከፈለ',
+                'Confirmed': 'የተረጋገጠ',
+                'Cancelled': 'ተሰርዟል'
+            };
+
+            function translateNodes(root) {
+                const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+                let node;
+                while (node = walker.nextNode()) {
+                    const text = node.nodeValue.trim();
+                    if (amharicDict[text]) {
+                        node.nodeValue = node.nodeValue.replace(text, amharicDict[text]);
+                    }
+                }
+            }
+            translateNodes(document.body);
+            const searchInput = document.querySelector('input[name="q"]');
+            if (searchInput) searchInput.placeholder = 'ፈጣን ፍለጋ...';
+            {% endif %}
         });
     </script>
     {% block extra_scripts %}{% endblock %}

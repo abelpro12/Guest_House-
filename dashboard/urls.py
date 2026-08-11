@@ -10,4 +10,5 @@ urlpatterns = [
     path('admin-panel/', views.admin_dashboard, name='admin'),
     path('guest-portal/', views.guest_portal, name='guest_portal'),
     path('search/', views.global_search, name='search'),
+    path('language/<str:lang_code>/', views.switch_language, name='switch_language'),
 ]

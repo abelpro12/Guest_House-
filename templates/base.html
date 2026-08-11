@@ -29,18 +29,130 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        /* Sidebar slide-in animation */
+        #mainSidebar {
+            transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+        }
+        #mainSidebar.mobile-open {
+            transform: translateX(0) !important;
+        }
+
+        /* Mobile: sidebar slides from left */
+        @media (max-width: 767px) {
+            #mainSidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100%;
+                z-index: 50;
+                transform: translateX(-100%);
+                display: flex !important;
+                width: 280px;
+            }
+        }
+
+        /* Sidebar overlay */
+        #sidebarOverlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2,6,23,0.75);
+            z-index: 49;
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+        #sidebarOverlay.active { display: block; }
+
+        /* Bottom mobile nav */
+        #mobileBottomNav {
+            display: none;
+        }
+        @media (max-width: 767px) {
+            #mobileBottomNav {
+                display: flex;
+            }
+        }
+
+        /* Responsive table: card-style on mobile */
+        .responsive-table thead {
+            display: none;
+        }
+        .responsive-table tbody tr {
+            display: block;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #0f172a;
+        }
+        .responsive-table tbody td {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+            border: none;
+            font-size: 12px;
+        }
+        .responsive-table tbody td::before {
+            content: attr(data-label);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 10px;
+            color: #64748b;
+            letter-spacing: 0.05em;
+            flex-shrink: 0;
+            margin-right: 12px;
+            min-width: 90px;
+        }
+        .responsive-table tbody td:last-child {
+            justify-content: flex-end;
+            padding-top: 10px;
+            border-top: 1px solid #1e293b;
+            margin-top: 4px;
+        }
+
+        /* On desktop, restore normal table */
+        @media (min-width: 768px) {
+            .responsive-table thead { display: table-header-group; }
+            .responsive-table tbody tr { display: table-row; border: none; border-radius: 0; margin-bottom: 0; padding: 0; background: transparent; }
+            .responsive-table tbody td { display: table-cell; padding: 10px 12px; border: none; font-size: 12px; }
+            .responsive-table tbody td::before { display: none; }
+            .responsive-table tbody td:last-child { border-top: none; padding-top: 10px; justify-content: flex-start; margin-top: 0; }
+        }
+
+        /* Smooth scroll */
+        html { scroll-behavior: smooth; }
+
+        /* Touch-friendly min tap size */
+        a, button { min-height: 36px; }
+        nav a { min-height: 40px; }
+
+        /* Hide scrollbars but keep scrollability */
+        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+
+        /* Safe area for bottom nav on notched phones */
+        .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 8px); }
+
+        /* Modal scroll fix on mobile */
+        .modal-scroll { overflow-y: auto; max-height: calc(100vh - 2rem); }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body class="h-full text-slate-100 antialiased bg-slate-950 flex flex-col md:flex-row">
 
+    <!-- Sidebar Overlay (mobile only) -->
+    <div id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
+
     {% if user.is_authenticated %}
     <!-- Sidebar Navigation -->
-    <aside id="mainSidebar" class="w-full md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 hidden md:flex">
+    <aside id="mainSidebar" class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 md:flex md:relative md:translate-x-0">
+
         <!-- Brand Header -->
-        <div class="h-16 px-6 flex items-center justify-between border-b border-slate-800">
+        <div class="h-16 px-4 flex items-center justify-between border-b border-slate-800 flex-shrink-0">
             <div class="flex items-center space-x-3">
-                <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
+                <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30 flex-shrink-0">
                     <i class="fa-solid fa-hotel text-lg"></i>
                 </div>
                 <div>
@@ -48,13 +160,17 @@
                     <span class="text-[10px] text-indigo-400 font-semibold tracking-wider uppercase">Manager v1.0</span>
                 </div>
             </div>
+            <!-- Close button (mobile only) -->
+            <button onclick="closeMobileSidebar()" class="md:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 flex-shrink-0">
+                <i class="fa-solid fa-xmark text-base"></i>
+            </button>
         </div>
 
         <!-- Property Switcher -->
         {% if current_property or user_properties %}
-        <div class="p-4 border-b border-slate-800 bg-slate-900/50 relative">
+        <div class="p-3 border-b border-slate-800 bg-slate-900/50 relative flex-shrink-0">
             <label class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Active Property</label>
-            
+
             <!-- Card Trigger -->
             <div onclick="togglePropertyDropdown(event)"
                  class="bg-slate-800/80 hover:bg-slate-800 p-2.5 rounded-lg border border-slate-700 hover:border-indigo-500/50 flex items-center justify-between cursor-pointer transition-all select-none">
@@ -68,7 +184,7 @@
                         {% elif current_property.subscription and current_property.subscription.is_trial %}
                         <span class="inline-block text-[10px] text-amber-400 font-semibold"><i class="fa-solid fa-gift mr-1"></i>Free Trial</span>
                         {% elif current_property.subscription %}
-                        <span class="inline-block text-[10px] text-emerald-400 font-semibold"><i class="fa-solid fa-shield-check mr-1"></i>Active License ({{ current_property.subscription.days_remaining }}d)</span>
+                        <span class="inline-block text-[10px] text-emerald-400 font-semibold"><i class="fa-solid fa-shield-check mr-1"></i>Active ({{ current_property.subscription.days_remaining }}d)</span>
                         {% endif %}
                     {% endif %}
                 </div>
@@ -78,12 +194,13 @@
             </div>
 
             <!-- Custom Floating Dropdown Menu -->
-            <div id="propertyDropdownMenu" class="hidden absolute left-4 right-4 mt-2 bg-slate-900 border border-slate-700 shadow-2xl rounded-xl overflow-hidden z-50 divide-y divide-slate-800 max-h-60 overflow-y-auto">
+            <div id="propertyDropdownMenu" class="hidden absolute left-3 right-3 mt-2 bg-slate-900 border border-slate-700 shadow-2xl rounded-xl overflow-hidden z-50 divide-y divide-slate-800 max-h-60 overflow-y-auto">
                 <div class="px-3 py-2 bg-slate-950 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                     Select Active Property
                 </div>
                 {% for p in user_properties %}
                 <a href="{% url 'properties:select' property_id=p.id %}"
+                   onclick="closeMobileSidebar()"
                    class="block px-3 py-2.5 text-xs font-semibold text-slate-200 hover:bg-indigo-600/20 hover:text-indigo-300 transition-colors flex items-center justify-between {% if current_property and current_property.id == p.id %}bg-indigo-950/40 text-indigo-400 border-l-2 border-indigo-500{% endif %}">
                     <div class="truncate">
                         <div>{{ p.property_name }}</div>
@@ -107,78 +224,78 @@
         {% endif %}
 
         <!-- Navigation Links -->
-        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-            <a href="{% url 'dashboard:index' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'dashboard' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+        <nav class="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
+            <a href="{% url 'dashboard:index' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'dashboard' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-chart-pie w-6 text-sm"></i> Dashboard
             </a>
 
             {% if user.is_receptionist or user.is_investor or user.is_admin %}
-            <a href="{% url 'rooms:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'rooms' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'rooms:list' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'rooms' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-door-closed w-6 text-sm"></i> Rooms Grid
             </a>
-            <a href="{% url 'bookings:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'bookings' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'bookings:list' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'bookings' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-calendar-check w-6 text-sm"></i> Reservations
             </a>
-            <a href="{% url 'guests:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'guests' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'guests:list' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'guests' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-users w-6 text-sm"></i> Guest Records
             </a>
-            <a href="{% url 'billing:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'billing' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'billing:list' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'billing' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-file-invoice-dollar w-6 text-sm"></i> Invoices
             </a>
-            <a href="{% url 'payments:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'payments' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'payments:list' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'payments' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-credit-card w-6 text-sm"></i> Payments & Ledger
             </a>
-            <a href="{% url 'shifts:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'shifts' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'shifts:list' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'shifts' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-cash-register w-6 text-sm"></i> Shift Register
             </a>
-            <a href="{% url 'housekeeping:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'housekeeping' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'housekeeping:list' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'housekeeping' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-broom w-6 text-sm"></i> Housekeeping
             </a>
-            <a href="{% url 'maintenance:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'maintenance' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'maintenance:list' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'maintenance' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-screwdriver-wrench w-6 text-sm"></i> Maintenance
             </a>
             {% endif %}
 
             {% if user.is_receptionist or user.is_investor or user.is_admin %}
-            <a href="{% url 'attendance_direct' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.url_name == 'attendance_direct' or request.resolver_match.url_name == 'attendance_list' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'attendance_direct' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.url_name == 'attendance_direct' or request.resolver_match.url_name == 'attendance_list' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-clipboard-user w-6 text-sm text-cyan-400"></i> Staff Attendance
             </a>
             {% endif %}
 
             {% if user.is_accountant or user.is_investor or user.is_admin %}
-            <a href="{% url 'finance:dashboard' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'finance' and request.resolver_match.url_name != 'attendance_list' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'finance:dashboard' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'finance' and request.resolver_match.url_name != 'attendance_list' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-calculator w-6 text-sm text-emerald-400"></i> Finance & Accounting
             </a>
             {% endif %}
 
             {% if user.is_investor or user.is_admin %}
-            <a href="{% url 'reports:index' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'reports' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'reports:index' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'reports' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-chart-line w-6 text-sm"></i> Financial Reports
             </a>
-            <a href="{% url 'audit:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'audit' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'audit:list' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'audit' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-shield-halved w-6 text-sm"></i> Audit Logs
             </a>
             {% endif %}
 
-            <a href="{% url 'properties:list' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'properties' and request.resolver_match.url_name != 'staff' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'properties:list' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'properties' and request.resolver_match.url_name != 'staff' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-building w-6 text-sm"></i> Properties
             </a>
 
             {% if user.is_investor or user.is_admin %}
-            <a href="{% url 'properties:staff' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.url_name == 'staff' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'properties:staff' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.url_name == 'staff' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-users-gear w-6 text-sm text-indigo-400"></i> Staff & Assignments
             </a>
             {% endif %}
 
             {% if user.is_admin %}
-            <a href="{% url 'accounts:investors' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.url_name == 'investors' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'accounts:investors' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.url_name == 'investors' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-user-tie w-6 text-sm text-emerald-400"></i> Investors Directory
             </a>
             {% endif %}
 
             {% if current_property and user.is_investor or user.is_admin %}
             {% if current_property %}
-            <a href="{% url 'subscriptions:status' property_id=current_property.id %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'subscriptions' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+            <a href="{% url 'subscriptions:status' property_id=current_property.id %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'subscriptions' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-crown w-6 text-sm text-amber-400"></i> Subscription
             </a>
             {% endif %}
@@ -186,9 +303,9 @@
         </nav>
 
         <!-- User Footer Profile -->
-        <div class="p-3 border-t border-slate-800 bg-slate-900/60 flex items-center justify-between">
-            <div class="flex items-center space-x-3 overflow-hidden">
-                <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-xs text-white">
+        <div class="p-3 border-t border-slate-800 bg-slate-900/60 flex items-center justify-between flex-shrink-0">
+            <div class="flex items-center space-x-2 overflow-hidden">
+                <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-xs text-white flex-shrink-0">
                     {{ user.username|slice:":2"|upper }}
                 </div>
                 <div class="truncate">
@@ -196,7 +313,7 @@
                     <div class="text-[10px] text-slate-400 uppercase tracking-wider font-medium">{{ user.get_role_display }}</div>
                 </div>
             </div>
-            <a href="{% url 'accounts:logout' %}" class="text-slate-400 hover:text-red-400 p-2 rounded-lg transition-colors" title="Logout">
+            <a href="{% url 'accounts:logout' %}" class="text-slate-400 hover:text-red-400 p-2 rounded-lg transition-colors flex-shrink-0" title="Logout">
                 <i class="fa-solid fa-right-from-bracket"></i>
             </a>
         </div>
@@ -207,19 +324,27 @@
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         <!-- Top Header Bar -->
-        <header class="h-16 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-4 md:px-6 flex items-center justify-between shrink-0">
-            <div class="flex items-center space-x-3">
-                <button onclick="toggleMobileSidebar()" class="md:hidden text-slate-400 hover:text-white p-2 focus:outline-none rounded-lg hover:bg-slate-800">
-                    <i class="fa-solid fa-bars text-lg"></i>
-                </button>
-                <h2 class="text-sm md:text-base font-bold text-white tracking-wide">{% block page_title %}Dashboard{% endblock %}</h2>
-            </div>
-            
-            <div class="flex items-center space-x-4">
+        <header class="h-14 md:h-16 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-3 md:px-6 flex items-center justify-between shrink-0 sticky top-0 z-30">
+            <div class="flex items-center space-x-2 md:space-x-3 min-w-0">
                 {% if user.is_authenticated %}
-                <a href="{% url 'accounts:profile' %}" class="text-xs font-semibold text-slate-300 hover:text-white flex items-center space-x-2">
+                <button onclick="openMobileSidebar()" id="hamburgerBtn" class="md:hidden text-slate-400 hover:text-white p-2 focus:outline-none rounded-lg hover:bg-slate-800 flex-shrink-0">
+                    <i class="fa-solid fa-bars text-base"></i>
+                </button>
+                {% endif %}
+                <h2 class="text-sm md:text-base font-bold text-white tracking-wide truncate">{% block page_title %}Dashboard{% endblock %}</h2>
+            </div>
+
+            <div class="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
+                {% if user.is_authenticated %}
+                <!-- Current property badge (mobile) -->
+                {% if current_property %}
+                <span class="md:hidden text-[10px] font-semibold text-indigo-400 bg-indigo-950/50 border border-indigo-800/50 px-2 py-1 rounded-lg max-w-[100px] truncate hidden sm:inline-block">
+                    {{ current_property.property_name }}
+                </span>
+                {% endif %}
+                <a href="{% url 'accounts:profile' %}" class="text-xs font-semibold text-slate-300 hover:text-white flex items-center space-x-1.5 p-1.5 rounded-lg hover:bg-slate-800 transition-colors">
                     <i class="fa-solid fa-user-gear"></i>
-                    <span>Profile</span>
+                    <span class="hidden sm:inline">Profile</span>
                 </a>
                 {% else %}
                 <a href="{% url 'accounts:login' %}" class="text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg transition-all">Sign In</a>
@@ -229,14 +354,14 @@
 
         <!-- Django Toast Messages -->
         {% if messages %}
-        <div class="px-6 pt-4 space-y-2">
+        <div class="px-3 md:px-6 pt-3 space-y-2">
             {% for message in messages %}
-            <div class="p-4 rounded-xl border text-xs font-semibold flex items-center justify-between shadow-lg transition-all {% if message.tags == 'error' %}bg-red-950/80 border-red-800/80 text-red-200{% elif message.tags == 'success' %}bg-emerald-950/80 border-emerald-800/80 text-emerald-200{% elif message.tags == 'warning' %}bg-amber-950/80 border-amber-800/80 text-amber-200{% else %}bg-indigo-950/80 border-indigo-800/80 text-indigo-200{% endif %}">
-                <div class="flex items-center space-x-3">
-                    <i class="fa-solid {% if message.tags == 'error' %}fa-circle-xmark text-red-400{% elif message.tags == 'success' %}fa-circle-check text-emerald-400{% else %}fa-circle-info text-indigo-400{% endif %} text-base"></i>
-                    <span>{{ message }}</span>
+            <div class="p-3 md:p-4 rounded-xl border text-xs font-semibold flex items-center justify-between shadow-lg transition-all {% if message.tags == 'error' %}bg-red-950/80 border-red-800/80 text-red-200{% elif message.tags == 'success' %}bg-emerald-950/80 border-emerald-800/80 text-emerald-200{% elif message.tags == 'warning' %}bg-amber-950/80 border-amber-800/80 text-amber-200{% else %}bg-indigo-950/80 border-indigo-800/80 text-indigo-200{% endif %}">
+                <div class="flex items-center space-x-2 min-w-0">
+                    <i class="fa-solid {% if message.tags == 'error' %}fa-circle-xmark text-red-400{% elif message.tags == 'success' %}fa-circle-check text-emerald-400{% else %}fa-circle-info text-indigo-400{% endif %} text-base flex-shrink-0"></i>
+                    <span class="truncate">{{ message }}</span>
                 </div>
-                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white">
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white flex-shrink-0 ml-2 p-1">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -245,19 +370,72 @@
         {% endif %}
 
         <!-- Body Content -->
-        <main class="flex-1 overflow-y-auto p-6">
+        <main class="flex-1 overflow-y-auto p-3 md:p-6 pb-20 md:pb-6">
             {% block content %}{% endblock %}
         </main>
     </div>
 
+    <!-- Mobile Bottom Navigation Bar -->
+    {% if user.is_authenticated %}
+    <nav id="mobileBottomNav" class="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 flex items-center justify-around px-1 py-2 md:hidden safe-area-bottom">
+        <a href="{% url 'dashboard:index' %}" class="flex flex-col items-center space-y-0.5 px-2 py-1 rounded-xl transition-colors {% if request.resolver_match.app_name == 'dashboard' %}text-indigo-400{% else %}text-slate-500{% endif %}">
+            <i class="fa-solid fa-chart-pie text-base"></i>
+            <span class="text-[9px] font-semibold">Home</span>
+        </a>
+        {% if user.is_receptionist or user.is_investor or user.is_admin %}
+        <a href="{% url 'bookings:list' %}" class="flex flex-col items-center space-y-0.5 px-2 py-1 rounded-xl transition-colors {% if request.resolver_match.app_name == 'bookings' %}text-indigo-400{% else %}text-slate-500{% endif %}">
+            <i class="fa-solid fa-calendar-check text-base"></i>
+            <span class="text-[9px] font-semibold">Bookings</span>
+        </a>
+        <a href="{% url 'guests:list' %}" class="flex flex-col items-center space-y-0.5 px-2 py-1 rounded-xl transition-colors {% if request.resolver_match.app_name == 'guests' %}text-indigo-400{% else %}text-slate-500{% endif %}">
+            <i class="fa-solid fa-users text-base"></i>
+            <span class="text-[9px] font-semibold">Guests</span>
+        </a>
+        <a href="{% url 'rooms:list' %}" class="flex flex-col items-center space-y-0.5 px-2 py-1 rounded-xl transition-colors {% if request.resolver_match.app_name == 'rooms' %}text-indigo-400{% else %}text-slate-500{% endif %}">
+            <i class="fa-solid fa-door-closed text-base"></i>
+            <span class="text-[9px] font-semibold">Rooms</span>
+        </a>
+        {% endif %}
+        {% if user.is_accountant or user.is_investor or user.is_admin %}
+        <a href="{% url 'finance:dashboard' %}" class="flex flex-col items-center space-y-0.5 px-2 py-1 rounded-xl transition-colors {% if request.resolver_match.app_name == 'finance' %}text-emerald-400{% else %}text-slate-500{% endif %}">
+            <i class="fa-solid fa-calculator text-base"></i>
+            <span class="text-[9px] font-semibold">Finance</span>
+        </a>
+        {% endif %}
+        <!-- More menu -->
+        <button onclick="openMobileSidebar()" class="flex flex-col items-center space-y-0.5 px-2 py-1 rounded-xl transition-colors text-slate-500 hover:text-white">
+            <i class="fa-solid fa-grip text-base"></i>
+            <span class="text-[9px] font-semibold">More</span>
+        </button>
+    </nav>
+    {% endif %}
+
     <script>
-        function toggleMobileSidebar() {
+        // ── Sidebar helpers ──────────────────────────────────────────────
+        function openMobileSidebar() {
             const sidebar = document.getElementById('mainSidebar');
-            if (sidebar) {
-                sidebar.classList.toggle('hidden');
-            }
+            const overlay = document.getElementById('sidebarOverlay');
+            if (!sidebar) return;
+            sidebar.classList.add('mobile-open');
+            if (overlay) overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
         }
 
+        function closeMobileSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (!sidebar) return;
+            sidebar.classList.remove('mobile-open');
+            if (overlay) overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close on ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeMobileSidebar();
+        });
+
+        // ── Property dropdown ────────────────────────────────────────────
         function togglePropertyDropdown(e) {
             e.stopPropagation();
             const menu = document.getElementById('propertyDropdownMenu');
@@ -271,6 +449,20 @@
             if (menu && !menu.classList.contains('hidden')) {
                 menu.classList.add('hidden');
             }
+        });
+
+        // ── Auto-dismiss toast messages ──────────────────────────────────
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('[class*="bg-emerald-950"], [class*="bg-red-950"], [class*="bg-amber-950"], [class*="bg-indigo-950"]');
+            alerts.forEach(function(alert) {
+                if (alert.parentElement && alert.parentElement.classList.contains('space-y-2')) {
+                    setTimeout(function() {
+                        alert.style.transition = 'opacity 0.4s';
+                        alert.style.opacity = '0';
+                        setTimeout(function() { alert.remove(); }, 400);
+                    }, 4500);
+                }
+            });
         });
     </script>
     {% block extra_scripts %}{% endblock %}

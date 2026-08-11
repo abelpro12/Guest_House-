@@ -7,30 +7,32 @@
 <div class="space-y-6">
 
     <!-- Top Navigation Subnav & Month Picker -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl gap-4">
-        <div class="flex items-center space-x-3">
-            <a href="{% url 'finance:dashboard' %}" class="px-4 py-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 rounded-xl font-bold text-xs">
-                <i class="fa-solid fa-chart-pie mr-1.5"></i> Executive Financial Overview
+    <div class="flex flex-col gap-3 bg-slate-900 border border-slate-800 rounded-2xl p-3 md:p-4 shadow-xl">
+        <!-- Subnav tabs -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <a href="{% url 'finance:dashboard' %}" class="px-3 py-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 rounded-xl font-bold text-xs whitespace-nowrap flex-shrink-0">
+                <i class="fa-solid fa-chart-pie mr-1.5"></i> Overview
             </a>
-            <a href="{% url 'finance:expense_list' %}" class="px-4 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl font-semibold text-xs transition-colors">
-                <i class="fa-solid fa-receipt mr-1.5"></i> Expense Ledger
+            <a href="{% url 'finance:expense_list' %}" class="px-3 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl font-semibold text-xs transition-colors whitespace-nowrap flex-shrink-0">
+                <i class="fa-solid fa-receipt mr-1.5"></i> Expenses
             </a>
-            <a href="{% url 'finance:payroll_list' %}" class="px-4 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl font-semibold text-xs transition-colors">
-                <i class="fa-solid fa-money-check-dollar mr-1.5"></i> Staff Payroll
+            <a href="{% url 'finance:payroll_list' %}" class="px-3 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl font-semibold text-xs transition-colors whitespace-nowrap flex-shrink-0">
+                <i class="fa-solid fa-money-check-dollar mr-1.5"></i> Payroll
             </a>
         </div>
 
-        <div class="flex items-center space-x-3">
-            <!-- Modal Trigger for View Audit Breakdown -->
-            <button onclick="document.getElementById('breakdownModal').classList.remove('hidden')" class="px-4 py-2 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-all shadow-md">
+        <!-- Controls row -->
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+            <!-- Audit Breakdown Button -->
+            <button onclick="document.getElementById('breakdownModal').classList.remove('hidden')" class="px-3 py-2 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 transition-all shadow-md">
                 <i class="fa-solid fa-magnifying-glass-chart text-cyan-400"></i>
-                <span>View {{ month_name }} Audit Breakdown</span>
+                <span>Audit Breakdown</span>
             </button>
 
             <!-- Month Filter Selector Form -->
-            <form method="GET" action="{% url 'finance:dashboard' %}" class="flex items-center space-x-2">
-                <input type="month" name="month" value="{{ selected_month_str }}" onchange="this.form.submit()" class="px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold text-xs">
-                <button type="submit" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md">
+            <form method="GET" action="{% url 'finance:dashboard' %}" class="flex items-center space-x-2 flex-1 sm:justify-end">
+                <input type="month" name="month" value="{{ selected_month_str }}" onchange="this.form.submit()" class="flex-1 sm:flex-none px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold text-xs">
+                <button type="submit" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md flex-shrink-0">
                     Filter
                 </button>
             </form>

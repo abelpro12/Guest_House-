@@ -4,71 +4,133 @@
 {% block page_title %}Bookings & Reservations{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
-    <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-2 text-xs">
-            <span class="font-semibold text-slate-400">Status Filter:</span>
-            <a href="{% url 'bookings:list' %}" class="px-3 py-1 rounded-lg border {% if not current_status %}bg-indigo-600 text-white border-indigo-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">All</a>
-            <a href="?status=checked_in" class="px-3 py-1 rounded-lg border {% if current_status == 'checked_in' %}bg-emerald-600 text-white border-emerald-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Checked In</a>
-            <a href="?status=confirmed" class="px-3 py-1 rounded-lg border {% if current_status == 'confirmed' %}bg-indigo-600 text-white border-indigo-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Confirmed</a>
-            <a href="?status=checked_out" class="px-3 py-1 rounded-lg border {% if current_status == 'checked_out' %}bg-slate-800 text-slate-400 border-slate-700{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Checked Out</a>
+<div class="space-y-4">
+    <!-- Header: filter + new button -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <!-- Status filters -->
+        <div class="flex items-center flex-wrap gap-2 text-xs">
+            <span class="font-semibold text-slate-400">Filter:</span>
+            <a href="{% url 'bookings:list' %}" class="px-3 py-1.5 rounded-lg border {% if not current_status %}bg-indigo-600 text-white border-indigo-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">All</a>
+            <a href="?status=checked_in" class="px-3 py-1.5 rounded-lg border {% if current_status == 'checked_in' %}bg-emerald-600 text-white border-emerald-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">In</a>
+            <a href="?status=confirmed" class="px-3 py-1.5 rounded-lg border {% if current_status == 'confirmed' %}bg-indigo-600 text-white border-indigo-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Confirmed</a>
+            <a href="?status=checked_out" class="px-3 py-1.5 rounded-lg border {% if current_status == 'checked_out' %}bg-slate-800 text-slate-400 border-slate-700{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Out</a>
         </div>
 
-        <a href="{% url 'bookings:create' %}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg">
-            + New Reservation
+        <a href="{% url 'bookings:create' %}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-1.5 w-full sm:w-auto justify-center">
+            <i class="fa-solid fa-plus"></i>
+            <span>New Reservation</span>
         </a>
     </div>
 
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-x-auto">
-        <table class="w-full text-left text-xs text-slate-300">
-            <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
-                <tr>
-                    <th class="p-3">Reference</th>
-                    <th class="p-3">Room</th>
-                    <th class="p-3">Guest Name</th>
-                    <th class="p-3">Check-In Date</th>
-                    <th class="p-3">Expected Check-Out</th>
-                    <th class="p-3">Total (ETB)</th>
-                    <th class="p-3">Paid (ETB)</th>
-                    <th class="p-3">Balance</th>
-                    <th class="p-3">Status</th>
-                    <th class="p-3">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800">
-                {% for b in bookings %}
-                <tr>
-                    <td class="p-3 font-mono text-indigo-400 font-bold"><a href="{% url 'bookings:detail' booking_id=b.id %}" class="hover:underline">{{ b.booking_reference }}</a></td>
-                    <td class="p-3 font-extrabold text-white">#{{ b.room.room_number }}</td>
-                    <td class="p-3 font-semibold">{{ b.guest.full_name }}</td>
-                    <td class="p-3">{{ b.check_in_date }}</td>
-                    <td class="p-3">{{ b.expected_check_out }}</td>
-                    <td class="p-3 font-bold text-white">{{ b.total_amount }}</td>
-                    <td class="p-3 text-emerald-400 font-bold">{{ b.amount_paid }}</td>
-                    <td class="p-3 font-bold {% if b.balance > 0 %}text-amber-400{% else %}text-slate-400{% endif %}">{{ b.balance }}</td>
-                    <td class="p-3">
-                        <span class="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase
+    <!-- Desktop Table / Mobile Cards wrapper -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+        <!-- Desktop Table (hidden on mobile) -->
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
+                    <tr>
+                        <th class="p-3">Reference</th>
+                        <th class="p-3">Room</th>
+                        <th class="p-3">Guest Name</th>
+                        <th class="p-3">Check-In</th>
+                        <th class="p-3">Check-Out</th>
+                        <th class="p-3">Total (ETB)</th>
+                        <th class="p-3">Paid</th>
+                        <th class="p-3">Balance</th>
+                        <th class="p-3">Status</th>
+                        <th class="p-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    {% for b in bookings %}
+                    <tr class="hover:bg-slate-800/40">
+                        <td class="p-3 font-mono text-indigo-400 font-bold"><a href="{% url 'bookings:detail' booking_id=b.id %}" class="hover:underline">{{ b.booking_reference }}</a></td>
+                        <td class="p-3 font-extrabold text-white">#{{ b.room.room_number }}</td>
+                        <td class="p-3 font-semibold">{{ b.guest.full_name }}</td>
+                        <td class="p-3">{{ b.check_in_date }}</td>
+                        <td class="p-3">{{ b.expected_check_out }}</td>
+                        <td class="p-3 font-bold text-white">{{ b.total_amount }}</td>
+                        <td class="p-3 text-emerald-400 font-bold">{{ b.amount_paid }}</td>
+                        <td class="p-3 font-bold {% if b.balance > 0 %}text-amber-400{% else %}text-slate-400{% endif %}">{{ b.balance }}</td>
+                        <td class="p-3">
+                            <span class="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase
+                                {% if b.status == 'checked_in' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
+                                {% elif b.status == 'checked_out' %}bg-slate-800 text-slate-400
+                                {% else %}bg-indigo-500/20 text-indigo-400 border border-indigo-500/30{% endif %}">
+                                {{ b.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="p-3">
+                            <div class="flex items-center space-x-2">
+                                <a href="{% url 'bookings:detail' booking_id=b.id %}" class="text-indigo-400 hover:underline font-semibold">View</a>
+                                {% if b.status == 'confirmed' or b.status == 'pending' %}
+                                <a href="{% url 'bookings:check_in' booking_id=b.id %}" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-[10px]">Check-In</a>
+                                <a href="{% url 'bookings:check_out' booking_id=b.id %}" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded font-bold text-[10px]">Check-Out</a>
+                                {% elif b.status == 'checked_in' %}
+                                <a href="{% url 'bookings:check_out' booking_id=b.id %}" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded font-bold text-[10px]">Check-Out</a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="10" class="p-6 text-center text-slate-500">No reservations found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Cards (hidden on desktop) -->
+        <div class="md:hidden divide-y divide-slate-800">
+            {% for b in bookings %}
+            <div class="p-4 space-y-3">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <a href="{% url 'bookings:detail' booking_id=b.id %}" class="font-mono text-indigo-400 font-bold text-sm hover:underline">{{ b.booking_reference }}</a>
+                        <div class="text-xs text-slate-400 mt-0.5">{{ b.guest.full_name }}</div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase
                             {% if b.status == 'checked_in' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
                             {% elif b.status == 'checked_out' %}bg-slate-800 text-slate-400
                             {% else %}bg-indigo-500/20 text-indigo-400 border border-indigo-500/30{% endif %}">
                             {{ b.get_status_display }}
                         </span>
-                    </td>
-                    <td class="p-3 flex items-center space-x-2">
-                        <a href="{% url 'bookings:detail' booking_id=b.id %}" class="text-indigo-400 hover:underline font-semibold">View</a>
-                        {% if b.status == 'confirmed' or b.status == 'pending' %}
-                        <a href="{% url 'bookings:check_in' booking_id=b.id %}" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-[10px]">Check-In</a>
-                        <a href="{% url 'bookings:check_out' booking_id=b.id %}" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded font-bold text-[10px]">Check-Out</a>
-                        {% elif b.status == 'checked_in' %}
-                        <a href="{% url 'bookings:check_out' booking_id=b.id %}" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded font-bold text-[10px]">Check-Out</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="10" class="p-6 text-center text-slate-500">No reservations found.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        <span class="text-xs font-extrabold text-white bg-slate-800 px-2 py-0.5 rounded">Rm #{{ b.room.room_number }}</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="bg-slate-800/50 rounded-lg p-2">
+                        <div class="text-slate-400 text-[10px] uppercase font-semibold">Check-In</div>
+                        <div class="font-semibold text-white mt-0.5">{{ b.check_in_date }}</div>
+                    </div>
+                    <div class="bg-slate-800/50 rounded-lg p-2">
+                        <div class="text-slate-400 text-[10px] uppercase font-semibold">Check-Out</div>
+                        <div class="font-semibold text-white mt-0.5">{{ b.expected_check_out }}</div>
+                    </div>
+                    <div class="bg-slate-800/50 rounded-lg p-2">
+                        <div class="text-slate-400 text-[10px] uppercase font-semibold">Total</div>
+                        <div class="font-bold text-white mt-0.5">{{ b.total_amount }} ETB</div>
+                    </div>
+                    <div class="bg-slate-800/50 rounded-lg p-2">
+                        <div class="text-slate-400 text-[10px] uppercase font-semibold">Balance</div>
+                        <div class="font-bold mt-0.5 {% if b.balance > 0 %}text-amber-400{% else %}text-emerald-400{% endif %}">{{ b.balance }} ETB</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 pt-1">
+                    <a href="{% url 'bookings:detail' booking_id=b.id %}" class="flex-1 text-center px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-400 font-semibold text-xs rounded-lg border border-slate-700">View Details</a>
+                    {% if b.status == 'confirmed' or b.status == 'pending' %}
+                    <a href="{% url 'bookings:check_in' booking_id=b.id %}" class="flex-1 text-center px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-xs">Check-In</a>
+                    {% elif b.status == 'checked_in' %}
+                    <a href="{% url 'bookings:check_out' booking_id=b.id %}" class="flex-1 text-center px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-bold text-xs">Check-Out</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="p-8 text-center text-slate-500 text-sm">No reservations found.</div>
+            {% endfor %}
+        </div>
     </div>
 </div>
 {% endblock %}

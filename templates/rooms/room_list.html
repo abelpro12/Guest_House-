@@ -5,30 +5,31 @@
 
 {% block content %}
 <div class="space-y-6">
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div class="flex items-center space-x-2 text-xs">
-            <span class="font-semibold text-slate-400">Filter Status:</span>
-            <a href="{% url 'rooms:list' %}" class="px-3 py-1 rounded-lg border {% if not current_status %}bg-indigo-600 text-white border-indigo-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">All</a>
-            <a href="?status=vacant" class="px-3 py-1 rounded-lg border {% if current_status == 'vacant' %}bg-emerald-600 text-white border-emerald-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Vacant</a>
-            <a href="?status=occupied" class="px-3 py-1 rounded-lg border {% if current_status == 'occupied' %}bg-rose-600 text-white border-rose-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Occupied</a>
-            <a href="?status=cleaning" class="px-3 py-1 rounded-lg border {% if current_status == 'cleaning' %}bg-amber-600 text-white border-amber-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Cleaning</a>
-            <a href="?status=maintenance" class="px-3 py-1 rounded-lg border {% if current_status == 'maintenance' %}bg-sky-600 text-white border-sky-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Maintenance</a>
+    <div class="space-y-3">
+        <!-- Filter bar -->
+        <div class="flex items-center flex-wrap gap-2 text-xs">
+            <span class="font-semibold text-slate-400">Filter:</span>
+            <a href="{% url 'rooms:list' %}" class="px-3 py-1.5 rounded-lg border {% if not current_status %}bg-indigo-600 text-white border-indigo-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">All</a>
+            <a href="?status=vacant" class="px-3 py-1.5 rounded-lg border {% if current_status == 'vacant' %}bg-emerald-600 text-white border-emerald-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Vacant</a>
+            <a href="?status=occupied" class="px-3 py-1.5 rounded-lg border {% if current_status == 'occupied' %}bg-rose-600 text-white border-rose-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Occupied</a>
+            <a href="?status=cleaning" class="px-3 py-1.5 rounded-lg border {% if current_status == 'cleaning' %}bg-amber-600 text-white border-amber-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Cleaning</a>
+            <a href="?status=maintenance" class="px-3 py-1.5 rounded-lg border {% if current_status == 'maintenance' %}bg-sky-600 text-white border-sky-500{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Maint.</a>
         </div>
-
-        <div class="flex items-center space-x-2">
-            <button onclick="openModal('bulkAddModal')" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-1">
+        <!-- Action buttons -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <button onclick="openModal('bulkAddModal')" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center space-x-1">
                 <i class="fa-solid fa-layer-group"></i>
-                <span>+ Bulk Add Rooms</span>
+                <span>Bulk Add Rooms</span>
             </button>
-            <button onclick="openModal('addRoomModal')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-1">
+            <button onclick="openModal('addRoomModal')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center space-x-1">
                 <i class="fa-solid fa-plus"></i>
-                <span>+ Single Room</span>
+                <span>Single Room</span>
             </button>
         </div>
     </div>
 
-    <!-- Rooms Table -->
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl overflow-x-auto">
+    <!-- Desktop Table -->
+    <div class="hidden md:block bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-x-auto">
         <table class="w-full text-left text-xs text-slate-300">
             <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
                 <tr>
@@ -42,7 +43,7 @@
             </thead>
             <tbody class="divide-y divide-slate-800">
                 {% for room in rooms %}
-                <tr>
+                <tr class="hover:bg-slate-800/40">
                     <td class="p-3 font-extrabold text-white text-sm">#{{ room.room_number }}</td>
                     <td class="p-3 font-semibold text-slate-200">{{ room.room_type.name }}</td>
                     <td class="p-3">{{ room.room_type.capacity }} Person(s)</td>
@@ -65,11 +66,40 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="p-8 text-center text-slate-500">No rooms found. Click "+ Single Room" or "+ Bulk Add Rooms" to add rooms.</td>
+                    <td colspan="6" class="p-8 text-center text-slate-500">No rooms found. Click "Single Room" or "Bulk Add Rooms" to get started.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    <!-- Mobile Card Grid -->
+    <div class="md:hidden grid grid-cols-2 gap-3">
+        {% for room in rooms %}
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 shadow-lg flex flex-col space-y-2">
+            <div class="flex items-center justify-between">
+                <span class="font-extrabold text-white text-lg">#{{ room.room_number }}</span>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-bold
+                    {% if room.status == 'vacant' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
+                    {% elif room.status == 'occupied' %}bg-rose-500/20 text-rose-400 border border-rose-500/30
+                    {% elif room.status == 'cleaning' %}bg-amber-500/20 text-amber-400 border border-amber-500/30
+                    {% elif room.status == 'maintenance' %}bg-sky-500/20 text-sky-400 border border-sky-500/30
+                    {% else %}bg-slate-800 text-slate-400{% endif %}">
+                    {{ room.get_status_display }}
+                </span>
+            </div>
+            <div class="text-xs text-slate-300 font-semibold">{{ room.room_type.name }}</div>
+            <div class="text-[10px] text-slate-400">{{ room.room_type.capacity }} pax &nbsp;·&nbsp; {{ room.price_per_night }} ETB/night</div>
+            <button onclick="openStatusModal({{ room.id }}, '{{ room.room_number }}', '{{ room.status }}')" class="mt-1 w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-400 font-semibold text-xs rounded-lg border border-slate-700 transition-colors">
+                Change Status
+            </button>
+        </div>
+        {% empty %}
+        <div class="col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center text-slate-500 text-sm">
+            <i class="fa-solid fa-door-closed text-3xl mb-3 block text-slate-700"></i>
+            No rooms found. Use the buttons above to add rooms.
+        </div>
+        {% endfor %}
     </div>
 </div>
 

@@ -4,6 +4,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import redirect
 
+from finance import views as finance_views
+
 def root_redirect(request):
     return redirect('dashboard:index')
 
@@ -22,6 +24,7 @@ urlpatterns = [
     path('shifts/', include('shifts.urls', namespace='shifts')),
     path('housekeeping/', include('housekeeping.urls', namespace='housekeeping')),
     path('maintenance/', include('maintenance.urls', namespace='maintenance')),
+    path('attendance/', finance_views.attendance_list, name='attendance_direct'),
     path('finance/', include('finance.urls', namespace='finance')),
     path('reports/', include('reports.urls', namespace='reports')),
     path('audit/', include('audit.urls', namespace='audit')),

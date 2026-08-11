@@ -72,5 +72,30 @@
         <div class="flex justify-between text-emerald-400 font-bold"><span>Amount Paid:</span> <span>{{ invoice.amount_paid }} ETB</span></div>
         <div class="flex justify-between text-amber-400 font-extrabold text-sm pt-1"><span>Balance Due:</span> <span>{{ invoice.balance }} ETB</span></div>
     </div>
+
+    <!-- Post Extra Service Charge Form -->
+    <div class="border-t border-slate-800 pt-6 space-y-3">
+        <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Add Service / Amenity Charge (Folio POS)</h4>
+        <form action="{% url 'billing:add_item' invoice_id=invoice.id %}" method="POST" class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+            {% csrf_token %}
+            <div class="sm:col-span-2">
+                <select name="service_id" onchange="if(this.value){document.getElementById('customDesc').style.display='none';}else{document.getElementById('customDesc').style.display='block';}" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-semibold">
+                    <option value="">-- Select Pre-configured Service --</option>
+                    {% for s in services %}
+                    <option value="{{ s.id }}">{{ s.name }} ({{ s.unit_price }} ETB)</option>
+                    {% endfor %}
+                </select>
+                <input type="text" id="customDesc" name="description" placeholder="Or enter custom item description..." class="w-full mt-2 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
+            </div>
+            <div>
+                <input type="number" name="quantity" value="1" min="1" placeholder="Qty" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-bold">
+            </div>
+            <div>
+                <button type="submit" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow transition-all">
+                    + Add Charge
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}

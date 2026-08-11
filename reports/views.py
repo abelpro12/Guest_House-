@@ -121,3 +121,54 @@ def export_excel(request):
     except Exception as e:
         messages.error(request, f"Excel export error: {str(e)}")
         return redirect('reports:index')
+
+
+@login_required
+@investor_or_admin_required
+def night_audit(request):
+    """Generates an end-of-day Night Audit report reconciling occupancy, collections, and pending balances."""
+    prop = getattr(request, 'current_property', None)
+    if not prop:
+        messages.error(request, "Select property.")
+        return redirect('properties:list')
+
+    today = date.today()
+    rooms = Room.objects.filter(property=prop, is_active=True)
+    total_rooms = rooms.count()
+    occupied_rooms = rooms.filter(status='occupied').count()
+    maintenance_rooms = rooms.filter(status='maintenance').count()
+    vacant_rooms = rooms.filter(status='vacant').count()
+    cleaning_rooms = rooms.filter(status='cleaning').count()
+
+    occupancy_rate = round((occupied_rooms / total_rooms * 100), 1) if total_rooms > 0 else 0
+
+    # Today's Check-ins & Check-outs
+    check_ins = Booking.objects.filter(property=prop, check_in_date=today)
+    check_outs = Booking.objects.filter(property=prop, expected_check_out=today)
+
+    # Today's Collections Breakdown
+    today_txs = Transaction.objects.filter(property=prop, transaction_status='completed', timestamp__date=today)
+    total_collected = today_txs.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    pm_breakdown = today_txs.values('payment_method').annotate(total=Sum('amount'), count=Count('id'))
+
+    # Active Outstanding Balances
+    active_bookings = Booking.objects.filter(property=prop, status__in=['confirmed', 'checked_in'])
+    total_outstanding = active_bookings.aggregate(total=Sum('balance'))['total'] or Decimal('0.00')
+
+    return render(request, 'reports/night_audit.html', {
+        'property': prop,
+        'today': today,
+        'total_rooms': total_rooms,
+        'occupied_rooms': occupied_rooms,
+        'vacant_rooms': vacant_rooms,
+        'cleaning_rooms': cleaning_rooms,
+        'maintenance_rooms': maintenance_rooms,
+        'occupancy_rate': occupancy_rate,
+        'check_ins': check_ins,
+        'check_outs': check_outs,
+        'total_collected': total_collected,
+        'pm_breakdown': pm_breakdown,
+        'total_outstanding': total_outstanding,
+        'today_txs': today_txs
+    })

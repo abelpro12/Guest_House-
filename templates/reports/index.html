@@ -16,6 +16,10 @@
         </div>
 
         <div class="flex items-center space-x-3">
+            <a href="{% url 'reports:night_audit' %}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-2">
+                <i class="fa-solid fa-moon"></i>
+                <span>Daily Night Audit</span>
+            </a>
             <a href="{% url 'reports:export_csv' %}" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-2">
                 <i class="fa-solid fa-file-csv"></i>
                 <span>Export CSV</span>

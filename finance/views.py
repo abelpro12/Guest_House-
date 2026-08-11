@@ -201,7 +201,7 @@ def payroll_create(request):
 
 @login_required
 def attendance_list(request):
-    if not (request.user.is_accountant or request.user.is_investor or request.user.is_admin):
+    if not (request.user.is_accountant or request.user.is_investor or request.user.is_admin or request.user.is_receptionist):
         messages.error(request, "Access restricted.")
         return redirect('dashboard:index')
 
@@ -228,7 +228,7 @@ def attendance_list(request):
 
 @login_required
 def attendance_log(request):
-    if not (request.user.is_accountant or request.user.is_investor or request.user.is_admin):
+    if not (request.user.is_accountant or request.user.is_investor or request.user.is_admin or request.user.is_receptionist):
         messages.error(request, "Access restricted.")
         return redirect('dashboard:index')
 

@@ -5,10 +5,17 @@ from django.db.models import Q
 from .models import Guest
 from accounts.models import CustomUser
 
+from properties.utils import get_current_property
+
 @login_required
 def guest_list(request):
     query = request.GET.get('q', '')
-    guests = Guest.objects.all().order_by('-created_at')
+    prop = get_current_property(request)
+
+    if prop:
+        guests = Guest.objects.filter(Q(bookings__property=prop) | Q(bookings__isnull=True)).distinct().order_by('-created_at')
+    else:
+        guests = Guest.objects.all().order_by('-created_at')
 
     if query:
         guests = guests.filter(
@@ -20,6 +27,7 @@ def guest_list(request):
 
     return render(request, 'guests/guest_list.html', {
         'guests': guests,
+        'current_property': prop,
         'query': query
     })
 

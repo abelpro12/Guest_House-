@@ -69,7 +69,12 @@
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-300 mb-1">Guest Password</label>
-                        <input type="password" name="guest_password" id="guestPassword" value="Guest@1234" placeholder="Default: Guest@1234" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white font-medium">
+                        <div class="relative">
+                            <input type="password" name="guest_password" id="guestPassword" value="" placeholder="Enter Password (or leave blank for Guest@1234)" class="w-full pl-4 pr-10 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white font-medium">
+                            <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 focus:outline-none">
+                                <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -87,6 +92,20 @@
                     }
                 } else {
                     fields.classList.add('hidden');
+                }
+            }
+
+            function togglePasswordVisibility() {
+                const passInput = document.getElementById('guestPassword');
+                const eyeIcon = document.getElementById('eyeIcon');
+                if (passInput.type === 'password') {
+                    passInput.type = 'text';
+                    eyeIcon.classList.remove('fa-eye');
+                    eyeIcon.classList.add('fa-eye-slash');
+                } else {
+                    passInput.type = 'password';
+                    eyeIcon.classList.remove('fa-eye-slash');
+                    eyeIcon.classList.add('fa-eye');
                 }
             }
         </script>

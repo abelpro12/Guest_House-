@@ -219,13 +219,25 @@ def attendance_list(request):
     staff_assignments = PropertyStaff.objects.filter(property=prop).select_related('user')
     staff_users = [ps.user for ps in staff_assignments]
 
-    # Calculate monthly summary statistics per staff
-    first_of_month = selected_date.replace(day=1)
-    monthly_records = StaffAttendance.objects.filter(property=prop, date__gte=first_of_month, date__lte=selected_date)
+    # Calculate monthly summary statistics & generate exact calendar matrix per staff
+    import calendar
+    year = selected_date.year
+    month = selected_date.month
+    _, num_days = calendar.monthrange(year, month)
+    days_in_month = [date(year, month, d) for d in range(1, num_days + 1)]
+
+    month_attendances = StaffAttendance.objects.filter(
+        property=prop,
+        date__year=year,
+        date__month=month
+    )
+    month_att_map = {(att.staff_member_id, att.date.day): att for att in month_attendances}
 
     staff_summaries = []
+    calendar_rows = []
+
     for staff in staff_users:
-        user_recs = monthly_records.filter(staff_member=staff)
+        user_recs = month_attendances.filter(staff_member=staff)
         present_count = user_recs.filter(status='present').count()
         absent_count = user_recs.filter(status='absent').count()
         late_count = user_recs.filter(status='late').count()
@@ -242,10 +254,34 @@ def attendance_list(request):
             'total_overtime': total_overtime,
         })
 
+        # Build day cells for calendar view
+        day_cells = []
+        for d in range(1, num_days + 1):
+            att = month_att_map.get((staff.id, d))
+            day_cells.append({
+                'day': d,
+                'date_str': date(year, month, d).isoformat(),
+                'attendance': att,
+            })
+
+        calendar_rows.append({
+            'staff': staff,
+            'day_cells': day_cells,
+            'present_count': present_count,
+            'absent_count': absent_count,
+            'late_count': late_count,
+            'leave_count': leave_count,
+            'total_overtime': total_overtime,
+        })
+
     return render(request, 'finance/attendance_list.html', {
         'property': prop,
         'staff_summaries': staff_summaries,
+        'calendar_rows': calendar_rows,
+        'days_in_month': days_in_month,
+        'num_days': range(1, num_days + 1),
         'selected_date': selected_date,
+        'month_name': selected_date.strftime('%B %Y'),
         'statuses': StaffAttendance.STATUS_CHOICES,
     })
 

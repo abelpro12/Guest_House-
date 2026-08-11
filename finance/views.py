@@ -142,12 +142,11 @@ def payroll_list(request):
     
     # Get staff list for modal
     staff_assignments = PropertyStaff.objects.filter(property=prop).select_related('user')
-    staff_users = [ps.user for ps in staff_assignments]
 
     return render(request, 'finance/payroll_list.html', {
         'property': prop,
         'payrolls': payrolls,
-        'staff_users': staff_users,
+        'staff_assignments': staff_assignments,
     })
 
 

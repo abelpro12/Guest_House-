@@ -93,6 +93,7 @@ def manage_staff(request):
         if action == 'assign_existing':
             user_id = request.POST.get('user_id')
             property_id = request.POST.get('property_id')
+            salary_val = Decimal(request.POST.get('base_salary', '0.00'))
             
             target_user = get_object_or_404(CustomUser, id=user_id, role__in=['receptionist', 'accountant'])
             target_prop = get_object_or_404(Property, id=property_id)
@@ -104,14 +105,15 @@ def manage_staff(request):
             staff_obj, created = PropertyStaff.objects.get_or_create(
                 property=target_prop,
                 user=target_user,
-                defaults={'role': target_user.role, 'is_active': True}
+                defaults={'role': target_user.role, 'base_salary': salary_val, 'is_active': True}
             )
             if not created:
                 staff_obj.is_active = True
                 staff_obj.role = target_user.role
+                staff_obj.base_salary = salary_val
                 staff_obj.save()
 
-            messages.success(request, f"Staff member {target_user.username} ({target_user.get_role_display()}) assigned to {target_prop.property_name}.")
+            messages.success(request, f"Staff member {target_user.username} assigned with Base Salary: {salary_val} ETB.")
             return redirect('properties:staff')
 
         elif action == 'create_new':
@@ -120,6 +122,7 @@ def manage_staff(request):
             email = request.POST.get('email', '')
             role = request.POST.get('role', 'receptionist')
             property_id = request.POST.get('property_id')
+            salary_val = Decimal(request.POST.get('base_salary', '0.00'))
 
             target_prop = get_object_or_404(Property, id=property_id)
             if not request.user.is_admin and target_prop.investor != request.user:
@@ -141,10 +144,25 @@ def manage_staff(request):
                 property=target_prop,
                 user=new_user,
                 role=role,
+                base_salary=salary_val,
                 is_active=True
             )
 
-            messages.success(request, f"Created {new_user.get_role_display()} account for {new_user.username} and assigned to {target_prop.property_name}.")
+            messages.success(request, f"Created {new_user.get_role_display()} account for {new_user.username} with Base Salary: {salary_val} ETB.")
+            return redirect('properties:staff')
+
+        elif action == 'update_salary':
+            staff_id = request.POST.get('staff_id')
+            salary_val = Decimal(request.POST.get('base_salary', '0.00'))
+            staff_obj = get_object_or_404(PropertyStaff, id=staff_id)
+
+            if not request.user.is_admin and staff_obj.property.investor != request.user:
+                messages.error(request, "Permission denied.")
+                return redirect('properties:staff')
+
+            staff_obj.base_salary = salary_val
+            staff_obj.save()
+            messages.success(request, f"Updated salary for {staff_obj.user.username} to {salary_val} ETB.")
             return redirect('properties:staff')
 
     return render(request, 'properties/staff_management.html', {

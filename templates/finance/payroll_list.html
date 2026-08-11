@@ -75,9 +75,13 @@
             {% csrf_token %}
             <div>
                 <label class="block font-semibold text-slate-300 mb-1">Select Staff Member</label>
-                <select name="staff_id" required class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
-                    {% for staff in staff_users %}
-                    <option value="{{ staff.id }}">{{ staff.get_full_name|default:staff.username }} (@{{ staff.username }} — {{ staff.get_role_display }})</option>
+                <select name="staff_id" id="payrollStaffSelect" onchange="updateBaseSalaryInput()" required class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+                    {% for ps in staff_assignments %}
+                    <option value="{{ ps.user.id }}" data-salary="{{ ps.base_salary }}">
+                        {{ ps.user.get_full_name|default:ps.user.username }} (@{{ ps.user.username }} — {{ ps.user.get_role_display }}) • Base Salary: {{ ps.base_salary }} ETB
+                    </option>
+                    {% empty %}
+                    <option value="" disabled>No assigned staff members found.</option>
                     {% endfor %}
                 </select>
             </div>
@@ -90,7 +94,7 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block font-semibold text-slate-300 mb-1">Base Salary (ETB)</label>
-                    <input type="number" step="0.01" name="base_salary" required placeholder="5000.00" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+                    <input type="number" step="0.01" id="payrollBaseSalaryInput" name="base_salary" required placeholder="5000.00" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-emerald-400 font-bold">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-300 mb-1">Bonus / Overtime (ETB)</label>
@@ -131,4 +135,18 @@
         </form>
     </div>
 </div>
+
+<script>
+function updateBaseSalaryInput() {
+    const sel = document.getElementById('payrollStaffSelect');
+    if (sel && sel.options.length > 0 && sel.selectedIndex >= 0) {
+        const salary = sel.options[sel.selectedIndex].getAttribute('data-salary') || '0.00';
+        const salaryInput = document.getElementById('payrollBaseSalaryInput');
+        if (salaryInput) {
+            salaryInput.value = salary;
+        }
+    }
+}
+document.addEventListener('DOMContentLoaded', updateBaseSalaryInput);
+</script>
 {% endblock %}

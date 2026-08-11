@@ -120,6 +120,12 @@ def provision_guest_account(request, guest_id):
                 first_name=guest.full_name.split()[0] if guest.full_name else '',
                 role='guest'
             )
+            guest.user = user_account
+            guest.save()
+            messages.success(request, f"Successfully provisioned Guest Portal account for '{guest.full_name}'! Username: @{username}")
+
+    return redirect('guests:detail', guest_id=guest.id)
+
 @login_required
 def guest_edit(request, guest_id):
     """Allows Receptionists, Investors, and Admins to edit profile and login credentials for an existing guest."""

@@ -81,3 +81,47 @@ def guest_detail(request, guest_id):
         'guest': guest,
         'bookings': bookings
     })
+
+@login_required
+def provision_guest_account(request, guest_id):
+    """Provisions a new portal login account or updates credentials for an existing guest."""
+    guest = get_object_or_404(Guest, id=guest_id)
+    
+    if request.method == 'POST':
+        custom_username = request.POST.get('guest_username', '').strip()
+        custom_password = request.POST.get('guest_password', '').strip()
+
+        username = custom_username or guest.phone_number or guest.id_document_number
+
+        if not username:
+            messages.error(request, "A valid username or phone number is required to provision account.")
+            return redirect('guests:detail', guest_id=guest.id)
+
+        # Check username uniqueness
+        existing_user = CustomUser.objects.filter(username=username).exclude(id=guest.user.id if guest.user else None).first()
+        if existing_user:
+            messages.error(request, f"Username '{username}' is already taken by another account. Please enter a different username.")
+            return redirect('guests:detail', guest_id=guest.id)
+
+        if guest.user:
+            # Update existing user account
+            guest.user.username = username
+            if custom_password:
+                guest.user.set_password(custom_password)
+            guest.user.save()
+            messages.success(request, f"Successfully updated login credentials for '{guest.full_name}'! Username: @{username}")
+        else:
+            # Provision brand new user account
+            password = custom_password or 'Guest@1234'
+            user_account = CustomUser.objects.create_user(
+                username=username,
+                password=password,
+                email=guest.email or '',
+                first_name=guest.full_name.split()[0] if guest.full_name else '',
+                role='guest'
+            )
+            guest.user = user_account
+            guest.save()
+            messages.success(request, f"Successfully provisioned Guest Portal account for '{guest.full_name}'! Username: @{username}")
+
+    return redirect('guests:detail', guest_id=guest.id)

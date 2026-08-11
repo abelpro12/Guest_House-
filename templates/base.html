@@ -641,43 +641,117 @@
                 'Daily Payment Method Breakdown': 'የዕለቱ የክፍያ መንገዶች ዝርዝር',
                 'Check-Ins Scheduled Today': 'ዛሬ የሚገቡ እንግዶች',
                 'Check-Outs Scheduled Today': 'ዛሬ የሚወጡ እንግዶች',
-                'Room Availability Matrix': 'የክፍሎች ክፍትነት ሰንጠረዥ'
+                'Room Availability Matrix': 'የክፍሎች ክፍትነት ሰንጠረዥ',
+                'Guest House Management System': 'የእንግዳ ማረፊያ አስተዳደር ሥርዓት',
+                'Manager v1.0': 'ሥርዓት v1.0',
+                'Active Property': 'ያለዎት ሆቴል',
+                'Switch Property': 'ሆቴል ቀይር',
+                'Staff Member': 'የድርጅቱ ሰራተኛ',
+                'Account Holder': 'የመለያ ባለቤት',
+                'System Status': 'የሥርዓቱ ሁኔታ',
+                'No data available': 'ምንም መረጃ የለም',
+                'ETB': 'ብር',
+
+                // Single Words & Generic Terms (matched last)
+                'Bookings': 'የተያዙ ክፍሎች',
+                'Booking': 'ቦታ ማስያዝ',
+                'Rooms': 'ክፍሎች',
+                'Room': 'ክፍል',
+                'Guests': 'እንግዶች',
+                'Guest': 'እንግዳ',
+                'Nights': 'ለሊቶች',
+                'Night': 'ለሊት',
+                'Total': 'ጠቅላላ',
+                'Subtotal': 'ንዑስ ድምር',
+                'Balance': 'ቀሪ ዕዳ',
+                'Revenue': 'ገቢ',
+                'Expenses': 'ወጪዎች',
+                'Expense': 'ወጪ',
+                'Profit': 'ትርፍ',
+                'Salaries': 'ደመወዞች',
+                'Salary': 'ደመወዝ',
+                'Attendance': 'መገኘት',
+                'Property': 'ሆቴል',
+                'Receipts': 'ደረሰኞች',
+                'Receipt': 'ደረሰኝ',
+                'Invoices': 'ደረሰኞች',
+                'Invoice': 'ደረሰኝ',
+                'Shifts': 'ሺፍቶች',
+                'Shift': 'ሺፍት',
+                'Filter': 'አጣራ',
+                'Search': 'ፈልግ',
+                'Back': 'ተመለስ',
+                'Edit': 'አስተካክል',
+                'Delete': 'ሰርዝ',
+                'Add': 'ጨምር',
+                'Create': 'ፍጠር',
+                'Update': 'አዘምን',
+                'View': 'ተመልከት',
+                'Close': 'ዝጋ',
+                'Open': 'ክፈት',
+                'Active': 'ንቁ',
+                'Inactive': 'ንቁ ያልሆነ',
+                'Select': 'ምረጥ',
+                'All': 'ሁሉም',
+                'Recent': 'የቅርብ ጊዜ',
+                'Daily': 'የዕለት',
+                'Weekly': 'የሳምንት',
+                'Monthly': 'የወር',
+                'Reports': 'ሪፖርቶች',
+                'Report': 'ሪፖርት',
+                'Logs': 'መዝገቦች',
+                'Log': 'መዝገብ'
             };
+
+            // Sort keys by length descending to match full phrases before single words
+            const sortedKeys = Object.keys(amharicDict).sort((a, b) => b.length - a.length);
 
             function translateFullTree(root) {
                 const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
                 let node;
                 while (node = walker.nextNode()) {
-                    let text = node.nodeValue.trim();
-                    if (amharicDict[text]) {
-                        node.nodeValue = node.nodeValue.replace(text, amharicDict[text]);
-                    } else {
-                        // Check subphrase matches for dynamic composite texts
-                        for (const [key, val] of Object.entries(amharicDict)) {
-                            if (text === key) {
-                                node.nodeValue = node.nodeValue.replace(key, val);
-                                break;
-                            }
+                    let val = node.nodeValue;
+                    if (!val || !val.trim()) continue;
+
+                    for (let i = 0; i < sortedKeys.length; i++) {
+                        const key = sortedKeys[i];
+                        if (val.includes(key)) {
+                            val = val.replaceAll(key, amharicDict[key]);
                         }
                     }
+                    node.nodeValue = val;
                 }
             }
 
+            // Run full text translation on DOM body
             translateFullTree(document.body);
 
-            // Translate placeholders, titles, and inputs
+            // Translate placeholders, input values, titles, and select options
             document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(function(el) {
-                const ph = el.placeholder.trim();
-                if (amharicDict[ph]) {
-                    el.placeholder = amharicDict[ph];
+                let ph = el.placeholder;
+                for (let i = 0; i < sortedKeys.length; i++) {
+                    const key = sortedKeys[i];
+                    if (ph.includes(key)) {
+                        ph = ph.replaceAll(key, amharicDict[key]);
+                    }
                 }
+                el.placeholder = ph;
             });
 
-            // Translate select dropdown default options
-            document.querySelectorAll('option').forEach(function(opt) {
-                const txt = opt.textContent.trim();
-                if (amharicDict[txt]) {
-                    opt.textContent = amharicDict[txt];
+            document.querySelectorAll('option, button, label, h1, h2, h3, h4, h5, h6, th, td, span, p, a').forEach(function(el) {
+                if (el.children.length === 0 && el.innerText) {
+                    let txt = el.innerText;
+                    let modified = false;
+                    for (let i = 0; i < sortedKeys.length; i++) {
+                        const key = sortedKeys[i];
+                        if (txt.includes(key)) {
+                            txt = txt.replaceAll(key, amharicDict[key]);
+                            modified = true;
+                        }
+                    }
+                    if (modified) {
+                        el.innerText = txt;
+                    }
                 }
             });
             {% endif %}

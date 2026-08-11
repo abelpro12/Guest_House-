@@ -31,8 +31,8 @@ def finance_dashboard(request):
     attendances = StaffAttendance.objects.filter(property=prop, date=date.today())
 
     # Revenue calculation from paid invoices
-    invoices = Invoice.objects.filter(booking__property=prop, is_paid=True)
-    total_revenue = invoices.aggregate(Sum('total_amount'))['total_amount__sum'] or Decimal('0.00')
+    invoices = Invoice.objects.filter(booking__property=prop, status='paid')
+    total_revenue = invoices.aggregate(Sum('total'))['total__sum'] or Decimal('0.00')
 
     # Expense calculation
     total_expenses = expenses.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')

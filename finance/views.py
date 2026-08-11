@@ -201,8 +201,8 @@ def payroll_create(request):
 
 @login_required
 def attendance_list(request):
-    if not (request.user.is_accountant or request.user.is_investor or request.user.is_admin or request.user.is_receptionist):
-        messages.error(request, "Access restricted.")
+    if not (request.user.is_receptionist or request.user.is_investor or request.user.is_admin):
+        messages.error(request, "Access restricted to receptionists and admins.")
         return redirect('dashboard:index')
 
     prop = get_current_property(request)
@@ -288,8 +288,8 @@ def attendance_list(request):
 
 @login_required
 def attendance_log(request):
-    if not (request.user.is_accountant or request.user.is_investor or request.user.is_admin or request.user.is_receptionist):
-        messages.error(request, "Access restricted.")
+    if not (request.user.is_receptionist or request.user.is_investor or request.user.is_admin):
+        messages.error(request, "Access restricted to receptionists and admins.")
         return redirect('dashboard:index')
 
     if request.method == 'POST':
@@ -327,8 +327,8 @@ def attendance_log(request):
 @login_required
 def attendance_bulk_mark(request):
     """1-Click action to mark all assigned staff present for today."""
-    if not (request.user.is_accountant or request.user.is_investor or request.user.is_admin or request.user.is_receptionist):
-        messages.error(request, "Access restricted.")
+    if not (request.user.is_receptionist or request.user.is_investor or request.user.is_admin):
+        messages.error(request, "Access restricted to receptionists and admins.")
         return redirect('dashboard:index')
 
     prop = get_current_property(request)

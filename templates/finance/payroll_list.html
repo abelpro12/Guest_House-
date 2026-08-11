@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Staff Payroll & Salary Roster — {{ property.property_name }}{% endblock %}
+{% block page_title %}Staff Payroll & Wages Management{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Controls -->
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div>
+            <h3 class="text-base font-bold text-white">Staff Payroll Roster</h3>
+            <p class="text-xs text-slate-400 mt-1">Manage staff monthly base salaries, bonuses, tax deductions, and payouts</p>
+        </div>
+        <button onclick="document.getElementById('payrollModal').classList.remove('hidden')" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-2">
+            <i class="fa-solid fa-plus"></i>
+            <span>Process Staff Payroll</span>
+        </button>
+    </div>
+
+    <!-- Payroll Roster Table -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
+                    <tr>
+                        <th class="p-3">Staff Member</th>
+                        <th class="p-3">Period</th>
+                        <th class="p-3">Base Salary</th>
+                        <th class="p-3">Bonus</th>
+                        <th class="p-3">Tax & Deductions</th>
+                        <th class="p-3">Net Salary</th>
+                        <th class="p-3">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    {% for pay in payrolls %}
+                    <tr>
+                        <td class="p-3 font-bold text-white">
+                            {{ pay.staff_member.get_full_name|default:pay.staff_member.username }}
+                            <span class="block text-[10px] font-normal text-indigo-400">@{{ pay.staff_member.username }} ({{ pay.staff_member.get_role_display }})</span>
+                        </td>
+                        <td class="p-3 font-semibold text-slate-300">{{ pay.period_name }}</td>
+                        <td class="p-3 font-mono text-slate-300">{{ pay.base_salary }} ETB</td>
+                        <td class="p-3 font-mono text-emerald-400">+{{ pay.bonus }} ETB</td>
+                        <td class="p-3 font-mono text-rose-400">-{{ pay.tax_deduction }} ETB</td>
+                        <td class="p-3 font-mono font-black text-emerald-400 text-sm">{{ pay.net_salary }} ETB</td>
+                        <td class="p-3">
+                            <span class="px-2.5 py-1 rounded text-[10px] font-bold uppercase
+                                {% if pay.status == 'paid' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
+                                {% elif pay.status == 'approved' %}bg-indigo-500/20 text-indigo-400 border border-indigo-500/30
+                                {% else %}bg-amber-500/20 text-amber-400 border border-amber-500/30{% endif %}">
+                                {{ pay.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="p-6 text-center text-slate-500">No payroll records generated yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Process Payroll Modal -->
+<div id="payrollModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h4 class="text-sm font-bold text-white">Process Staff Monthly Payroll</h4>
+            <button onclick="document.getElementById('payrollModal').classList.add('hidden')" class="text-slate-400 hover:text-white">✕</button>
+        </div>
+
+        <form method="POST" action="{% url 'finance:payroll_create' %}" class="space-y-4 text-xs">
+            {% csrf_token %}
+            <div>
+                <label class="block font-semibold text-slate-300 mb-1">Select Staff Member</label>
+                <select name="staff_id" required class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+                    {% for staff in staff_users %}
+                    <option value="{{ staff.id }}">{{ staff.get_full_name|default:staff.username }} (@{{ staff.username }} — {{ staff.get_role_display }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-300 mb-1">Payroll Period Name</label>
+                <input type="text" name="period_name" required value="August 2026" placeholder="e.g. August 2026" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Base Salary (ETB)</label>
+                    <input type="number" step="0.01" name="base_salary" required placeholder="5000.00" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Bonus / Overtime (ETB)</label>
+                    <input type="number" step="0.01" name="bonus" value="0.00" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Income Tax / Pension (ETB)</label>
+                    <input type="number" step="0.01" name="tax_deduction" value="0.00" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Other Deductions (ETB)</label>
+                    <input type="number" step="0.01" name="deductions" value="0.00" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Payout Status</label>
+                    <select name="status" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+                        <option value="draft">Draft / Pending Approval</option>
+                        <option value="approved">Approved</option>
+                        <option value="paid">Paid (Auto-logs Expense)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Paid Date</label>
+                    <input type="date" name="paid_on" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-2">
+                <button type="button" onclick="document.getElementById('payrollModal').classList.add('hidden')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg font-semibold">Cancel</button>
+                <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg">Process Payroll</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'shifts',
     'housekeeping',
     'maintenance',
+    'finance',
     'reports',
     'audit',
     'notifications',

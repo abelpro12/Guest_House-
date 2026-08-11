@@ -22,6 +22,7 @@ urlpatterns = [
     path('shifts/', include('shifts.urls', namespace='shifts')),
     path('housekeeping/', include('housekeeping.urls', namespace='housekeeping')),
     path('maintenance/', include('maintenance.urls', namespace='maintenance')),
+    path('finance/', include('finance.urls', namespace='finance')),
     path('reports/', include('reports.urls', namespace='reports')),
     path('audit/', include('audit.urls', namespace='audit')),
     path('notifications/', include('notifications.urls', namespace='notifications')),

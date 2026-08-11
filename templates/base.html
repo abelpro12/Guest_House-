@@ -139,6 +139,12 @@
             </a>
             {% endif %}
 
+            {% if user.is_accountant or user.is_investor or user.is_admin %}
+            <a href="{% url 'finance:dashboard' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'finance' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
+                <i class="fa-solid fa-calculator w-6 text-sm text-emerald-400"></i> Finance & Accounting
+            </a>
+            {% endif %}
+
             {% if user.is_investor or user.is_admin %}
             <a href="{% url 'reports:index' %}" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'reports' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
                 <i class="fa-solid fa-chart-line w-6 text-sm"></i> Financial Reports

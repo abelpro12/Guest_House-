@@ -5,6 +5,7 @@ class CustomUser(AbstractUser):
     ROLE_CHOICES = (
         ('admin', 'Platform Admin'),
         ('investor', 'Investor / Owner'),
+        ('accountant', 'Finance / Accountant'),
         ('receptionist', 'Front Desk Receptionist'),
         ('guest', 'Guest / Customer'),
     )
@@ -21,6 +22,10 @@ class CustomUser(AbstractUser):
     @property
     def is_investor(self):
         return self.role == 'investor'
+
+    @property
+    def is_accountant(self):
+        return self.role == 'accountant'
 
     @property
     def is_receptionist(self):

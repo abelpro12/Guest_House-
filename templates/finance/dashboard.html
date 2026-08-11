@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}Financial & Accounting Suite — {{ property.property_name }}{% endblock %}
+{% block page_title %}Financial Controller & Accounting Center{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Sub-navigation Header Tabs -->
+    <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'finance:dashboard' %}" class="px-4 py-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 rounded-xl font-bold text-xs">
+                <i class="fa-solid fa-chart-pie mr-1.5"></i> Executive Summary
+            </a>
+            <a href="{% url 'finance:expense_list' %}" class="px-4 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl font-semibold text-xs transition-colors">
+                <i class="fa-solid fa-receipt mr-1.5"></i> Expense Log
+            </a>
+            <a href="{% url 'finance:payroll_list' %}" class="px-4 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl font-semibold text-xs transition-colors">
+                <i class="fa-solid fa-money-check-dollar mr-1.5"></i> Staff Payroll
+            </a>
+            <a href="{% url 'finance:attendance_list' %}" class="px-4 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl font-semibold text-xs transition-colors">
+                <i class="fa-solid fa-clipboard-user mr-1.5"></i> Staff Attendance
+            </a>
+        </div>
+        <div class="text-xs text-slate-400 font-medium">
+            <i class="fa-solid fa-building text-indigo-400 mr-1"></i> {{ property.property_name }}
+        </div>
+    </div>
+
+    <!-- Summary KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- Revenue Card -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Gross Revenue</span>
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-bold">
+                    <i class="fa-solid fa-sack-dollar"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-black text-white mt-3">{{ total_revenue }} <span class="text-xs font-normal text-slate-400">ETB</span></p>
+            <p class="text-[10px] text-emerald-400 mt-2"><i class="fa-solid fa-arrow-trend-up mr-1"></i> From Paid Invoices</p>
+        </div>
+
+        <!-- Expenses Card -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Expenses</span>
+                <div class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center text-sm font-bold">
+                    <i class="fa-solid fa-arrow-down-short-wide"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-black text-white mt-3">{{ total_expenses }} <span class="text-xs font-normal text-slate-400">ETB</span></p>
+            <p class="text-[10px] text-rose-400 mt-2"><i class="fa-solid fa-file-invoice mr-1"></i> Maintenance, Salaries, Supplies</p>
+        </div>
+
+        <!-- Net Operating Profit Card -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Net Operating Profit</span>
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-black {% if net_profit >= 0 %}text-emerald-400{% else %}text-rose-400{% endif %} mt-3">{{ net_profit }} <span class="text-xs font-normal text-slate-400">ETB</span></p>
+            <p class="text-[10px] text-slate-400 mt-2">Revenue - Operating Expenditures</p>
+        </div>
+
+        <!-- Tax Liability Summary Card -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tax Liabilities</span>
+                <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm font-bold">
+                    <i class="fa-solid fa-landmark"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-black text-amber-300 mt-3">{{ total_tax_liability }} <span class="text-xs font-normal text-slate-400">ETB</span></p>
+            <p class="text-[10px] text-amber-400 mt-2">Est. VAT (15%) + Payroll Tax</p>
+        </div>
+    </div>
+
+    <!-- Middle Grid: Category Breakdown & Tax Breakdown -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Expenses Category Breakdown -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <h4 class="text-sm font-bold text-white border-b border-slate-800 pb-3 flex items-center justify-between">
+                <span>Expense Breakdown by Category</span>
+                <a href="{% url 'finance:expense_list' %}" class="text-xs font-semibold text-indigo-400 hover:underline">View Log ➔</a>
+            </h4>
+            <div class="space-y-3 text-xs">
+                {% for item in cat_summary %}
+                <div class="flex items-center justify-between p-2.5 bg-slate-800/50 rounded-xl border border-slate-700/60">
+                    <span class="font-bold text-slate-200">{{ item.category }}</span>
+                    <span class="font-mono text-rose-400 font-bold">{{ item.total }} ETB</span>
+                </div>
+                {% empty %}
+                <p class="text-slate-500 text-center py-4">No expense records logged yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Statutory Tax & Compliance Breakdown -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <h4 class="text-sm font-bold text-white border-b border-slate-800 pb-3 flex items-center space-x-2">
+                <i class="fa-solid fa-scale-balanced text-amber-400"></i>
+                <span>Statutory Tax & Regulatory Estimations</span>
+            </h4>
+            <div class="space-y-3 text-xs">
+                <div class="p-3 bg-slate-800/50 rounded-xl border border-slate-700/60 flex justify-between items-center">
+                    <div>
+                        <p class="font-bold text-slate-200">Estimated Guest Sales Tax / VAT (15%)</p>
+                        <p class="text-[10px] text-slate-400">Calculated on gross revenue collected</p>
+                    </div>
+                    <span class="font-mono font-bold text-amber-400 text-sm">{{ estimated_vat }} ETB</span>
+                </div>
+
+                <div class="p-3 bg-slate-800/50 rounded-xl border border-slate-700/60 flex justify-between items-center">
+                    <div>
+                        <p class="font-bold text-slate-200">Staff Payroll Tax & Pension Deductions</p>
+                        <p class="text-[10px] text-slate-400">Calculated from staff monthly payrolls</p>
+                    </div>
+                    <span class="font-mono font-bold text-amber-400 text-sm">{{ payroll_taxes }} ETB</span>
+                </div>
+
+                <div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex justify-between items-center">
+                    <span class="font-bold text-amber-300">Total Statutory Tax Reserve</span>
+                    <span class="font-mono font-bold text-amber-300 text-base">{{ total_tax_liability }} ETB</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Expenses Table -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h4 class="text-sm font-bold text-white">Recent Operating Expenditures</h4>
+            <a href="{% url 'finance:expense_list' %}" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md">
+                + Record New Expense
+            </a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
+                    <tr>
+                        <th class="p-3">Title</th>
+                        <th class="p-3">Category</th>
+                        <th class="p-3">Date</th>
+                        <th class="p-3">Amount</th>
+                        <th class="p-3">Paid To</th>
+                        <th class="p-3">Payment Method</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    {% for exp in recent_expenses %}
+                    <tr>
+                        <td class="p-3 font-bold text-white">{{ exp.title }}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-semibold">{{ exp.get_category_display }}</span></td>
+                        <td class="p-3 font-mono text-slate-400">{{ exp.expense_date }}</td>
+                        <td class="p-3 font-mono font-bold text-rose-400">{{ exp.amount }} ETB</td>
+                        <td class="p-3 text-slate-300">{{ exp.paid_to|default:"—" }}</td>
+                        <td class="p-3 uppercase text-[10px] text-slate-400">{{ exp.get_payment_method_display }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="p-4 text-center text-slate-500">No recent expenses recorded.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

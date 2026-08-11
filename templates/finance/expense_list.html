@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Expense Log — {{ property.property_name }}{% endblock %}
+{% block page_title %}Operational & Maintenance Expense Log{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Controls -->
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div>
+            <h3 class="text-base font-bold text-white">Expenditure Roster</h3>
+            <p class="text-xs text-slate-400 mt-1">Track maintenance, supplies, utilities, and operational payments</p>
+        </div>
+        <button onclick="document.getElementById('expenseModal').classList.remove('hidden')" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-2">
+            <i class="fa-solid fa-plus"></i>
+            <span>Record New Expense</span>
+        </button>
+    </div>
+
+    <!-- Category Filter Pills -->
+    <div class="flex items-center space-x-2 overflow-x-auto pb-2">
+        <a href="{% url 'finance:expense_list' %}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold border {% if not category_filter %}bg-indigo-600/20 text-indigo-400 border-indigo-500/30{% else %}bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800{% endif %}">
+            All Categories
+        </a>
+        {% for cat_key, cat_label in categories %}
+        <a href="{% url 'finance:expense_list' %}?category={{ cat_key }}" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold border {% if category_filter == cat_key %}bg-indigo-600/20 text-indigo-400 border-indigo-500/30{% else %}bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800{% endif %}">
+            {{ cat_label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Expenses Table -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-800/80 uppercase text-[10px] text-slate-400 font-semibold">
+                    <tr>
+                        <th class="p-3">Title</th>
+                        <th class="p-3">Category</th>
+                        <th class="p-3">Expense Date</th>
+                        <th class="p-3">Amount</th>
+                        <th class="p-3">Paid To (Vendor)</th>
+                        <th class="p-3">Method</th>
+                        <th class="p-3">Receipt / Ref</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800">
+                    {% for exp in expenses %}
+                    <tr>
+                        <td class="p-3 font-bold text-white">
+                            {{ exp.title }}
+                            {% if exp.notes %}<p class="text-[10px] font-normal text-slate-400 mt-0.5">{{ exp.notes }}</p>{% endif %}
+                        </td>
+                        <td class="p-3"><span class="px-2.5 py-1 rounded bg-slate-800 text-indigo-300 border border-slate-700 text-[10px] font-bold">{{ exp.get_category_display }}</span></td>
+                        <td class="p-3 font-mono text-slate-400">{{ exp.expense_date }}</td>
+                        <td class="p-3 font-mono font-black text-rose-400 text-sm">{{ exp.amount }} ETB</td>
+                        <td class="p-3 text-slate-300 font-medium">{{ exp.paid_to|default:"—" }}</td>
+                        <td class="p-3 uppercase text-[10px] text-slate-400 font-semibold">{{ exp.get_payment_method_display }}</td>
+                        <td class="p-3 font-mono text-xs text-indigo-400">{{ exp.receipt_reference|default:"—" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="p-6 text-center text-slate-500">No expense records found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Expense Modal -->
+<div id="expenseModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h4 class="text-sm font-bold text-white">Record Operational / Maintenance Expense</h4>
+            <button onclick="document.getElementById('expenseModal').classList.add('hidden')" class="text-slate-400 hover:text-white">✕</button>
+        </div>
+
+        <form method="POST" action="{% url 'finance:expense_create' %}" class="space-y-4 text-xs">
+            {% csrf_token %}
+            <div>
+                <label class="block font-semibold text-slate-300 mb-1">Expense Title</label>
+                <input type="text" name="title" required placeholder="e.g. Generator Diesel Refill / Plumbing Repair" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Category</label>
+                    <select name="category" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+                        {% for cat_key, cat_label in categories %}
+                        <option value="{{ cat_key }}">{{ cat_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Amount (ETB)</label>
+                    <input type="number" step="0.01" name="amount" required placeholder="0.00" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Expense Date</label>
+                    <input type="date" name="expense_date" required class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Paid To (Vendor)</label>
+                    <input type="text" name="paid_to" placeholder="Vendor or Person Name" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Payment Method</label>
+                    <select name="payment_method" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+                        {% for method_key, method_label in payment_methods %}
+                        <option value="{{ method_key }}">{{ method_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Receipt / Invoice #</label>
+                    <input type="text" name="receipt_reference" placeholder="e.g. REC-9921" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium">
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-300 mb-1">Notes / Description</label>
+                <textarea name="notes" rows="2" placeholder="Additional details..." class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-medium"></textarea>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-2">
+                <button type="button" onclick="document.getElementById('expenseModal').classList.add('hidden')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg font-semibold">Cancel</button>
+                <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-lg">Save Expense</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

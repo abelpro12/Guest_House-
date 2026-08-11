@@ -120,8 +120,54 @@ def provision_guest_account(request, guest_id):
                 first_name=guest.full_name.split()[0] if guest.full_name else '',
                 role='guest'
             )
-            guest.user = user_account
-            guest.save()
-            messages.success(request, f"Successfully provisioned Guest Portal account for '{guest.full_name}'! Username: @{username}")
+@login_required
+def guest_edit(request, guest_id):
+    """Allows Receptionists, Investors, and Admins to edit profile and login credentials for an existing guest."""
+    guest = get_object_or_404(Guest, id=guest_id)
 
-    return redirect('guests:detail', guest_id=guest.id)
+    if request.method == 'POST':
+        guest.full_name = request.POST.get('full_name', guest.full_name)
+        guest.phone_number = request.POST.get('phone_number', guest.phone_number)
+        guest.email = request.POST.get('email', guest.email)
+        guest.id_document_type = request.POST.get('id_document_type', guest.id_document_type)
+        guest.id_document_number = request.POST.get('id_document_number', guest.id_document_number)
+        guest.nationality = request.POST.get('nationality', guest.nationality)
+        guest.address = request.POST.get('address', guest.address)
+        guest.save()
+
+        # Handle portal user account updates if requested
+        create_user_account = request.POST.get('create_user_account') == '1'
+        if create_user_account or guest.user:
+            custom_username = request.POST.get('guest_username', '').strip()
+            custom_password = request.POST.get('guest_password', '').strip()
+
+            username = custom_username or guest.phone_number or guest.id_document_number
+
+            if username:
+                # Check uniqueness
+                existing_user = CustomUser.objects.filter(username=username).exclude(id=guest.user.id if guest.user else None).first()
+                if existing_user:
+                    messages.error(request, f"Username '{username}' is already taken by another user.")
+                    return render(request, 'guests/guest_form.html', {'guest': guest})
+
+                if guest.user:
+                    guest.user.username = username
+                    if custom_password:
+                        guest.user.set_password(custom_password)
+                    guest.user.save()
+                else:
+                    password = custom_password or 'Guest@1234'
+                    user_account = CustomUser.objects.create_user(
+                        username=username,
+                        password=password,
+                        email=guest.email or '',
+                        first_name=guest.full_name.split()[0] if guest.full_name else '',
+                        role='guest'
+                    )
+                    guest.user = user_account
+                    guest.save()
+
+        messages.success(request, f"Successfully updated profile and credentials for '{guest.full_name}'!")
+        return redirect('guests:detail', guest_id=guest.id)
+
+    return render(request, 'guests/guest_form.html', {'guest': guest})

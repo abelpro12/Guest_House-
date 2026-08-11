@@ -14,9 +14,15 @@
             </div>
         </div>
 
-        <a href="{% url 'bookings:create' %}?guest_id={{ guest.id }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg">
-            + New Booking for Guest
-        </a>
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'guests:edit' guest_id=guest.id %}" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 shadow-md flex items-center space-x-1.5">
+                <i class="fa-solid fa-pen-to-square text-amber-400"></i>
+                <span>Edit Profile</span>
+            </a>
+            <a href="{% url 'bookings:create' %}?guest_id={{ guest.id }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg">
+                + New Booking for Guest
+            </a>
+        </div>
     </div>
 
     <!-- Guest Portal Login Credentials Management Card -->

@@ -505,8 +505,9 @@
             });
 
             {% if current_language == 'am' %}
-            // ── Client-side Amharic Translation Engine ────────────────────────
+            // ── Comprehensive Client-Side Amharic Translation Engine ────────────────────────
             const amharicDict = {
+                // Navigation & Headers
                 'Dashboard': 'ዳሽቦርድ',
                 'Bookings Overview': 'የቦታ ማስያዝ አጠቃላይ እይታ',
                 'Bookings & Stays': 'የተያዙ ክፍሎች',
@@ -528,31 +529,157 @@
                 'Profile': 'ፕሮፋይል',
                 'Sign Out': 'ውጡ',
                 'Sign In': 'ግቡ',
-                'Check-In': 'ቼክ-ኢን',
+                'Quick search...': 'ፈጣን ፍለጋ...',
+                'Global Search Results': 'ዓለም አቀፍ የፍለጋ ውጤቶች',
+
+                // Actions & Buttons
+                'New Booking': 'አዲስ ቦታ ማስያዝ',
+                'Quick Check-In': 'ፈጣን ቼክ-ኢን',
+                'Check-In Guest': 'እንግዳ ያስግቡ',
+                'Proceed to Check-Out': 'ለቼክ-አውት ቀጥል',
                 'Check-Out': 'ቼክ-አውት',
+                'Extend Stay': 'ቆይታ አራዝም',
+                'Cancel': 'ሰርዝ',
+                'Cancel Booking': 'ቦታ ማስያዝ ሰርዝ',
+                'Add Room': 'አዲስ ክፍል ጨምር',
+                'Add Guest': 'አዲስ እንግዳ መዝግብ',
+                'Save': 'አስቀምጥ',
+                'Submit': 'ላክ',
+                'Search': 'ፈልግ',
+                'View Breakdown': 'ዝርዝር ይመልከቱ',
+                'Record Payment': 'ክፍያ መዝግብ',
+                'Generate Receipt': 'ደረሰኝ አውርድ',
+                'Export CSV': 'በCSV አውርድ',
+                'Export Excel': 'በExcel አውርድ',
+                'Print Report': 'ሪፖርት አትም',
+                'Daily Night Audit': 'የዕለቱ የሌሊት ኦዲት',
+                'Add Expense': 'ወጪ ጨምር',
+                'Add Payroll': 'ደመወዝ ጨምር',
+                'Start Shift': 'ሺፍት ጀምር',
+                'Close Shift': 'ሺፍት ዝጋ',
+
+                // Statuses & Badges
                 'Vacant': 'ክፍት',
                 'Occupied': 'የተያዘ',
                 'Cleaning': 'ጽዳት ላይ',
+                'Maintenance': 'ጥገና ላይ',
+                'Unavailable': 'አይገኝም',
+                'Confirmed': 'የተረጋገጠ',
+                'Checked In': 'የገባ',
+                'Checked Out': 'የወጣ',
+                'Pending': 'በመጠባበቅ ላይ',
+                'Cancelled': 'የተሰረዘ',
                 'Unpaid': 'ያልተከፈለ',
                 'Paid': 'የተከፈለ',
                 'Partially Paid': 'በከፊል የተከፈለ',
-                'Confirmed': 'የተረጋገጠ',
-                'Cancelled': 'ተሰርዟል'
+                'Open': 'ክፍት',
+                'Closed': 'የተዘጋ',
+                'In Progress': 'በሂደት ላይ',
+                'Resolved': 'ተፈትቷል',
+                'Present': 'ተገኝቷል',
+                'Absent': 'ቀርትቷል',
+                'Late': 'ዘግይቷል',
+
+                // Table Headers & Field Labels
+                'Guest Name': 'የእንግዳ ስም',
+                'Full Name': 'ሙሉ ስም',
+                'Room Number': 'የክፍል ቁጥር',
+                'Room Type': 'የክፍል ዓይነት',
+                'Check-In Date': 'መግቢያ ቀን',
+                'Expected Check-Out': 'መውጫ ቀን',
+                'Check-In': 'መግቢያ',
+                'Check-Out': 'መውጫ',
+                'Total Amount': 'ጠቅላላ ዋጋ',
+                'Amount Paid': 'የተከፈለ መጠን',
+                'Balance Due': 'ቀሪ ዕዳ',
+                'Status': 'ሁኔታ',
+                'Action': 'ድርጊት',
+                'Actions': 'ድርጊቶች',
+                'Phone': 'ስልክ ቁጥር',
+                'Phone Number': 'ስልክ ቁጥር',
+                'ID Number': 'የመታወቂያ ቁጥር',
+                'ID Document': 'የመታወቂያ ሰነድ',
+                'Nationality': 'ዜግነት',
+                'Payment Method': 'የክፍያ መንገድ',
+                'Date': 'ቀን',
+                'Amount': 'መጠን',
+                'Reference': 'ማጣቀሻ',
+                'Role': 'ኃላፊነት',
+                'Salary': 'ደመወዝ',
+                'Expense': 'ወጪ',
+                'Expenses': 'ወጪዎች',
+                'Profit': 'ትርፍ',
+                'Net Profit': 'የተጣራ ትርፍ',
+                'Revenue': 'ገቢ',
+                'Total Revenue': 'ጠቅላላ ገቢ',
+                'Occupancy Rate': 'የክፍሎች ይዞታ መጠን',
+                'Occupancy': 'የክፍሎች ይዞታ',
+                'Total Rooms': 'ጠቅላላ ክፍሎች',
+                'Available Rooms': 'ክፍት ክፍሎች',
+                'Nightly Rate': 'የአንድ ည ዋጋ',
+                'Category': 'ምድብ',
+                'Description': 'መግለጫ',
+                'Quantity': 'ብዛት',
+                'Unit Price': 'የአንዱ ዋጋ',
+                'Subtotal': 'ንዑስ ድምር',
+                'Discount': 'ቅናሽ',
+                'Grand Total': 'ጠቅላላ ድምር',
+                'Receptionist': 'ሪሴፕሺኒስት',
+                'Accountant': 'ሂሳብ ሹም',
+                'Investor': 'ኢንቨስተር',
+                'Admin': 'አስተዳዳሪ',
+
+                // Common Phrase Overlays
+                'Guest Profile': 'የእንግዳ መገለጫ',
+                'Stay Schedule': 'የቆይታ ጊዜ ሰሌዳ',
+                'Financial Summary': 'የፋይናንስ ማጠቃለያ',
+                'Transaction History': 'የክፍያ ታሪክ',
+                'Quick Check-In Form': 'የፈጣን ቼክ-ኢን ፎርም',
+                'Filter Bookings': 'ቦታ ማስያዝ አጣራ',
+                'Recent Bookings': 'ቅርብ ጊዜ የተያዙ ክፍሎች',
+                'End-of-Day Night Audit Summary': 'የዕለቱ የሌሊት ኦዲት ማጠቃለያ',
+                'Daily Payment Method Breakdown': 'የዕለቱ የክፍያ መንገዶች ዝርዝር',
+                'Check-Ins Scheduled Today': 'ዛሬ የሚገቡ እንግዶች',
+                'Check-Outs Scheduled Today': 'ዛሬ የሚወጡ እንግዶች',
+                'Room Availability Matrix': 'የክፍሎች ክፍትነት ሰንጠረዥ'
             };
 
-            function translateNodes(root) {
+            function translateFullTree(root) {
                 const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
                 let node;
                 while (node = walker.nextNode()) {
-                    const text = node.nodeValue.trim();
+                    let text = node.nodeValue.trim();
                     if (amharicDict[text]) {
                         node.nodeValue = node.nodeValue.replace(text, amharicDict[text]);
+                    } else {
+                        // Check subphrase matches for dynamic composite texts
+                        for (const [key, val] of Object.entries(amharicDict)) {
+                            if (text === key) {
+                                node.nodeValue = node.nodeValue.replace(key, val);
+                                break;
+                            }
+                        }
                     }
                 }
             }
-            translateNodes(document.body);
-            const searchInput = document.querySelector('input[name="q"]');
-            if (searchInput) searchInput.placeholder = 'ፈጣን ፍለጋ...';
+
+            translateFullTree(document.body);
+
+            // Translate placeholders, titles, and inputs
+            document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(function(el) {
+                const ph = el.placeholder.trim();
+                if (amharicDict[ph]) {
+                    el.placeholder = amharicDict[ph];
+                }
+            });
+
+            // Translate select dropdown default options
+            document.querySelectorAll('option').forEach(function(opt) {
+                const txt = opt.textContent.trim();
+                if (amharicDict[txt]) {
+                    opt.textContent = amharicDict[txt];
+                }
+            });
             {% endif %}
         });
     </script>

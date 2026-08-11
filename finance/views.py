@@ -319,9 +319,9 @@ def attendance_log(request):
             }
         )
         messages.success(request, f"Attendance & hours logged for {staff_user.username} on {att_date}!")
-        return redirect(f"/finance/attendance/?date={att_date}")
+        return redirect(f"/attendance/?date={att_date}")
 
-    return redirect('finance:attendance_list')
+    return redirect('attendance_direct')
 
 
 @login_required
@@ -346,4 +346,4 @@ def attendance_bulk_mark(request):
         count += 1
 
     messages.success(request, f"Successfully marked all {count} staff members Present for {att_date}!")
-    return redirect(f"/finance/attendance/?date={att_date}")
+    return redirect(f"/attendance/?date={att_date}")

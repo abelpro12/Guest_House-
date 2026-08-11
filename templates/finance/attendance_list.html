@@ -1,55 +1,131 @@
 {% extends 'base.html' %}
 
-{% block title %}Staff Daily Attendance — {{ property.property_name }}{% endblock %}
-{% block page_title %}Staff Attendance Ledger{% endblock %}
+{% block title %}Structured Staff Attendance & Hours — {{ property.property_name }}{% endblock %}
+{% block page_title %}Staff Attendance & Working Hours Ledger{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
 
-    <!-- Header Controls -->
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+    <!-- Header Controls & Actions -->
+    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
         <div>
-            <h3 class="text-base font-bold text-white">Daily Attendance Roster</h3>
-            <p class="text-xs text-slate-400 mt-1">Log and inspect daily staff attendance for payroll verification</p>
+            <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                <i class="fa-solid fa-clipboard-user text-cyan-400"></i>
+                <span>Daily Attendance & Shift Hours Ledger</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">Record worker check-in, check-out, status, and overtime hours</p>
         </div>
-        
-        <!-- Date Selector Form -->
-        <form method="GET" action="{% url 'finance:attendance_list' %}" class="flex items-center space-x-2">
-            <input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}" onchange="this.form.submit()" class="px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs font-medium">
-            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md">
-                View Date
-            </button>
-        </form>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- 1-Click Quick Bulk Action -->
+            <a href="{% url 'finance:attendance_bulk' %}?date={{ selected_date|date:'Y-m-d' }}" onclick="return confirm('Mark all staff Present for {{ selected_date|date:'Y-m-d' }}?');" class="px-4 py-2 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shadow-md">
+                <i class="fa-solid fa-bolt"></i>
+                <span>Mark All Staff Present</span>
+            </a>
+
+            <!-- Date Selector Form -->
+            <form method="GET" action="{% url 'finance:attendance_list' %}" class="flex items-center space-x-2">
+                <input type="date" name="date" value="{{ selected_date|date:'Y-m-d' }}" onchange="this.form.submit()" class="px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs font-medium">
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md">
+                    Filter Date
+                </button>
+            </form>
+        </div>
     </div>
 
-    <!-- Staff Attendance Logging Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {% for staff in staff_users %}
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex items-center justify-between">
-            <div>
-                <h4 class="text-sm font-bold text-white">{{ staff.get_full_name|default:staff.username }}</h4>
-                <p class="text-xs text-slate-400">@{{ staff.username }} ({{ staff.get_role_display }})</p>
+    <!-- Attendance Staff Roster Cards -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {% for item in staff_summaries %}
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4 relative overflow-hidden">
+            
+            <!-- Employee Title & Monthly Stats Pill -->
+            <div class="flex items-start justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm border border-indigo-500/30">
+                        {{ item.staff.username|first|upper }}
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-white">{{ item.staff.get_full_name|default:item.staff.username }}</h4>
+                        <p class="text-xs text-slate-400">@{{ item.staff.username }} • <span class="text-indigo-400 font-semibold">{{ item.staff.get_role_display }}</span></p>
+                    </div>
+                </div>
+
+                <!-- Monthly Summary Badges -->
+                <div class="flex items-center space-x-1.5 text-[10px] font-bold">
+                    <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" title="Present this month">
+                        🟢 {{ item.present_count }}d
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30" title="Absent this month">
+                        🔴 {{ item.absent_count }}d
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30" title="Late this month">
+                        ⏳ {{ item.late_count }}d
+                    </span>
+                    {% if item.total_overtime > 0 %}
+                    <span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30" title="Total Overtime Hours">
+                        ⏱️ {{ item.total_overtime }}h
+                    </span>
+                    {% endif %}
+                </div>
             </div>
 
-            <!-- Attendance Form -->
-            <form method="POST" action="{% url 'finance:attendance_log' %}" class="flex items-center space-x-2">
+            <!-- Attendance Entry Form -->
+            <form method="POST" action="{% url 'finance:attendance_log' %}" class="space-y-3 text-xs">
                 {% csrf_token %}
-                <input type="hidden" name="staff_id" value="{{ staff.id }}">
+                <input type="hidden" name="staff_id" value="{{ item.staff.id }}">
                 <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
-                <select name="status" onchange="this.form.submit()" class="px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs font-semibold">
-                    {% for st_key, st_label in statuses %}
-                    <option value="{{ st_key }}"
-                        {% for att in attendances %}
-                            {% if att.staff_member_id == staff.id and att.status == st_key %}selected{% endif %}
-                        {% endfor %}
-                    >{{ st_label }}</option>
-                    {% endfor %}
-                </select>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 mb-1">Attendance Status</label>
+                        <select name="status" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-bold">
+                            {% for st_key, st_label in statuses %}
+                            <option value="{{ st_key }}" {% if item.attendance and item.attendance.status == st_key %}selected{% endif %}>
+                                {{ st_label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 mb-1">Check-In Time</label>
+                        <input type="time" name="check_in_time" value="{{ item.attendance.check_in_time|time:'H:i' }}" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 mb-1">Hours Worked</label>
+                        <input type="number" step="0.5" name="hours_worked" value="{{ item.attendance.hours_worked|default:'8.00' }}" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 mb-1">Overtime (Hours)</label>
+                        <input type="number" step="0.5" name="overtime_hours" value="{{ item.attendance.overtime_hours|default:'0.00' }}" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium text-amber-400">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 mb-1">Check-Out Time</label>
+                        <input type="time" name="check_out_time" value="{{ item.attendance.check_out_time|time:'H:i' }}" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-medium">
+                    </div>
+                </div>
+
+                <div>
+                    <input type="text" name="notes" value="{{ item.attendance.notes|default:'' }}" placeholder="Notes (e.g. Shift swap / Reason for late arrival)..." class="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-[11px]">
+                </div>
+
+                <div class="flex justify-end pt-1">
+                    <button type="submit" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-md flex items-center space-x-1">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Save Record</span>
+                    </button>
+                </div>
             </form>
         </div>
         {% empty %}
-        <div class="col-span-2 p-8 text-center bg-slate-900 border border-slate-800 rounded-2xl text-slate-500 text-xs">
-            No staff members assigned to this property yet.
+        <div class="col-span-2 p-12 text-center bg-slate-900 border border-slate-800 rounded-2xl text-slate-500 text-xs">
+            <i class="fa-solid fa-users-slash text-3xl mb-3 block text-slate-600"></i>
+            No staff members assigned to this property yet. Assign workers in Staff & Assignments first.
         </div>
         {% endfor %}
     </div>

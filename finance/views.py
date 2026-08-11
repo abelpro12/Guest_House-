@@ -214,13 +214,37 @@ def attendance_list(request):
         selected_date = date.today()
 
     attendances = StaffAttendance.objects.filter(property=prop, date=selected_date)
+    att_dict = {att.staff_member_id: att for att in attendances}
+
     staff_assignments = PropertyStaff.objects.filter(property=prop).select_related('user')
     staff_users = [ps.user for ps in staff_assignments]
 
+    # Calculate monthly summary statistics per staff
+    first_of_month = selected_date.replace(day=1)
+    monthly_records = StaffAttendance.objects.filter(property=prop, date__gte=first_of_month, date__lte=selected_date)
+
+    staff_summaries = []
+    for staff in staff_users:
+        user_recs = monthly_records.filter(staff_member=staff)
+        present_count = user_recs.filter(status='present').count()
+        absent_count = user_recs.filter(status='absent').count()
+        late_count = user_recs.filter(status='late').count()
+        leave_count = user_recs.filter(status='leave').count()
+        total_overtime = user_recs.aggregate(Sum('overtime_hours'))['overtime_hours__sum'] or Decimal('0.00')
+
+        staff_summaries.append({
+            'staff': staff,
+            'attendance': att_dict.get(staff.id),
+            'present_count': present_count,
+            'absent_count': absent_count,
+            'late_count': late_count,
+            'leave_count': leave_count,
+            'total_overtime': total_overtime,
+        })
+
     return render(request, 'finance/attendance_list.html', {
         'property': prop,
-        'attendances': attendances,
-        'staff_users': staff_users,
+        'staff_summaries': staff_summaries,
         'selected_date': selected_date,
         'statuses': StaffAttendance.STATUS_CHOICES,
     })
@@ -237,6 +261,10 @@ def attendance_log(request):
         staff_id = request.POST.get('staff_id')
         att_date = request.POST.get('date', date.today().isoformat())
         status = request.POST.get('status', 'present')
+        check_in = request.POST.get('check_in_time') or None
+        check_out = request.POST.get('check_out_time') or None
+        hours_worked = Decimal(request.POST.get('hours_worked', '8.00'))
+        overtime_hours = Decimal(request.POST.get('overtime_hours', '0.00'))
         notes = request.POST.get('notes')
 
         staff_user = get_object_or_404(CustomUser, id=staff_id)
@@ -247,10 +275,39 @@ def attendance_log(request):
             date=att_date,
             defaults={
                 'status': status,
+                'check_in_time': check_in,
+                'check_out_time': check_out,
+                'hours_worked': hours_worked,
+                'overtime_hours': overtime_hours,
                 'notes': notes
             }
         )
-        messages.success(request, f"Attendance logged for {staff_user.username} on {att_date}!")
+        messages.success(request, f"Attendance & hours logged for {staff_user.username} on {att_date}!")
         return redirect(f"/finance/attendance/?date={att_date}")
 
     return redirect('finance:attendance_list')
+
+
+@login_required
+def attendance_bulk_mark(request):
+    """1-Click action to mark all assigned staff present for today."""
+    if not (request.user.is_accountant or request.user.is_investor or request.user.is_admin or request.user.is_receptionist):
+        messages.error(request, "Access restricted.")
+        return redirect('dashboard:index')
+
+    prop = get_current_property(request)
+    att_date = request.GET.get('date', date.today().isoformat())
+
+    staff_assignments = PropertyStaff.objects.filter(property=prop).select_related('user')
+    count = 0
+    for ps in staff_assignments:
+        StaffAttendance.objects.update_or_create(
+            property=prop,
+            staff_member=ps.user,
+            date=att_date,
+            defaults={'status': 'present', 'hours_worked': Decimal('8.00')}
+        )
+        count += 1
+
+    messages.success(request, f"Successfully marked all {count} staff members Present for {att_date}!")
+    return redirect(f"/finance/attendance/?date={att_date}")

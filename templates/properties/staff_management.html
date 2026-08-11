@@ -127,7 +127,7 @@
                 <label class="block text-xs font-bold text-slate-400 mb-1">Select Staff Account</label>
                 <select name="user_id" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs">
                     {% for r in receptionists %}
-                    <option value="{{ r.id }}">{{ r.username }} ({{ r.get_role_display }})</option>
+                    <option value="{{ r.id }}">{{ r.get_full_name|default:r.username }} (@{{ r.username }} — {{ r.get_role_display }})</option>
                     {% empty %}
                     <option value="" disabled>No staff accounts available. Create one first.</option>
                     {% endfor %}

@@ -82,11 +82,13 @@ def manage_staff(request):
     if request.user.is_admin:
         properties = Property.objects.filter(is_active=True)
         staff_members = PropertyStaff.objects.all().select_related('property', 'user')
+        receptionists = CustomUser.objects.filter(role__in=['receptionist', 'accountant']).order_by('username')
     else:
         properties = Property.objects.filter(investor=request.user, is_active=True)
         staff_members = PropertyStaff.objects.filter(property__investor=request.user).select_related('property', 'user')
-
-    receptionists = CustomUser.objects.filter(role__in=['receptionist', 'accountant'])
+        receptionists = CustomUser.objects.filter(role__in=['receptionist', 'accountant']).filter(
+            Q(property_assignments__property__investor=request.user) | Q(property_assignments__isnull=True)
+        ).distinct().order_by('username')
 
     if request.method == 'POST':
         action = request.POST.get('action')

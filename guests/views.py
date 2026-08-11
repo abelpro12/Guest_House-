@@ -37,18 +37,22 @@ def guest_create(request):
 
         user_account = None
         if create_user_account:
-            username = phone_number or id_doc_num
-            user_account, created = CustomUser.objects.get_or_create(
+            custom_username = request.POST.get('guest_username', '').strip()
+            custom_password = request.POST.get('guest_password', '').strip() or 'Guest@1234'
+            
+            username = custom_username or phone_number or id_doc_num
+
+            if CustomUser.objects.filter(username=username).exists():
+                messages.error(request, f"Username '{username}' is already taken. Please enter a unique username.")
+                return render(request, 'guests/guest_form.html')
+
+            user_account = CustomUser.objects.create_user(
                 username=username,
-                defaults={
-                    'email': email or '',
-                    'first_name': full_name.split()[0] if full_name else '',
-                    'role': 'guest'
-                }
+                password=custom_password,
+                email=email or '',
+                first_name=full_name.split()[0] if full_name else '',
+                role='guest'
             )
-            if created:
-                user_account.set_password('Guest@1234')
-                user_account.save()
 
         guest = Guest.objects.create(
             user=user_account,

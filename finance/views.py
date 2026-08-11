@@ -136,8 +136,8 @@ def payroll_list(request):
     payrolls = StaffPayroll.objects.filter(property=prop).order_by('-created_at')
     
     # Get staff list for modal
-    staff_assignments = PropertyStaff.objects.filter(property=prop).select_related('staff')
-    staff_users = [ps.staff for ps in staff_assignments]
+    staff_assignments = PropertyStaff.objects.filter(property=prop).select_related('user')
+    staff_users = [ps.user for ps in staff_assignments]
 
     return render(request, 'finance/payroll_list.html', {
         'property': prop,
@@ -214,8 +214,8 @@ def attendance_list(request):
         selected_date = date.today()
 
     attendances = StaffAttendance.objects.filter(property=prop, date=selected_date)
-    staff_assignments = PropertyStaff.objects.filter(property=prop).select_related('staff')
-    staff_users = [ps.staff for ps in staff_assignments]
+    staff_assignments = PropertyStaff.objects.filter(property=prop).select_related('user')
+    staff_users = [ps.user for ps in staff_assignments]
 
     return render(request, 'finance/attendance_list.html', {
         'property': prop,

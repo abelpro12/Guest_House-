@@ -101,6 +101,11 @@ def finance_dashboard(request):
         prev_month_end = curr - timedelta(days=1)
         curr = prev_month_end.replace(day=1)
 
+    if total_revenue > 0:
+        profit_margin = round((net_profit / total_revenue) * Decimal('100.0'), 1)
+    else:
+        profit_margin = Decimal('0.0')
+
     return render(request, 'finance/dashboard.html', {
         'property': prop,
         'month_name': month_name,
@@ -109,12 +114,15 @@ def finance_dashboard(request):
         'total_revenue': total_revenue,
         'total_expenses': total_expenses,
         'net_profit': net_profit,
+        'profit_margin': profit_margin,
         'cat_summary': cat_summary,
         'estimated_vat': estimated_vat,
         'payroll_taxes': payroll_taxes,
         'total_tax_liability': total_tax_liability,
         'total_salary_commitment': total_salary_commitment,
         'total_payroll_paid': total_payroll_paid,
+        'all_month_expenses': expenses,
+        'all_month_invoices': invoices,
         'recent_expenses': expenses[:5],
         'recent_payrolls': payrolls[:5],
         'today_attendances': attendances,

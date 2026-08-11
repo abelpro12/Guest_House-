@@ -279,13 +279,13 @@
 
             {% if user.is_receptionist or user.is_investor or user.is_admin %}
             <a href="{% url 'attendance_direct' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.url_name == 'attendance_direct' or request.resolver_match.url_name == 'attendance_list' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
-                <i class="fa-solid fa-clipboard-user w-6 text-sm text-cyan-400"></i> Staff Attendance
+                <i class="fa-solid fa-clipboard-user w-6 text-sm"></i> Staff Attendance
             </a>
             {% endif %}
 
             {% if user.is_accountant or user.is_investor or user.is_admin %}
             <a href="{% url 'finance:dashboard' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'finance' and request.resolver_match.url_name != 'attendance_list' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
-                <i class="fa-solid fa-calculator w-6 text-sm text-emerald-400"></i> Finance & Accounting
+                <i class="fa-solid fa-calculator w-6 text-sm"></i> Finance & Accounting
             </a>
             {% endif %}
 
@@ -304,20 +304,20 @@
 
             {% if user.is_investor or user.is_admin %}
             <a href="{% url 'properties:staff' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.url_name == 'staff' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
-                <i class="fa-solid fa-users-gear w-6 text-sm text-indigo-400"></i> Staff & Assignments
+                <i class="fa-solid fa-users-gear w-6 text-sm"></i> Staff & Assignments
             </a>
             {% endif %}
 
             {% if user.is_admin %}
             <a href="{% url 'accounts:investors' %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.url_name == 'investors' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
-                <i class="fa-solid fa-user-tie w-6 text-sm text-emerald-400"></i> Investors Directory
+                <i class="fa-solid fa-user-tie w-6 text-sm"></i> Investors Directory
             </a>
             {% endif %}
 
             {% if current_property and user.is_investor or user.is_admin %}
             {% if current_property %}
             <a href="{% url 'subscriptions:status' property_id=current_property.id %}" onclick="closeMobileSidebar()" class="flex items-center px-3 py-2.5 text-xs font-semibold rounded-lg transition-colors {% if request.resolver_match.app_name == 'subscriptions' %}bg-indigo-600/20 text-indigo-400 border border-indigo-500/30{% else %}text-slate-400 hover:bg-slate-800 hover:text-slate-200{% endif %}">
-                <i class="fa-solid fa-crown w-6 text-sm text-amber-400"></i> Subscription
+                <i class="fa-solid fa-crown w-6 text-sm"></i> Subscription
             </a>
             {% endif %}
             {% endif %}

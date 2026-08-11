@@ -64,9 +64,10 @@
                         </td>
                         <td class="p-3">
                             <span class="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase
-                                {% if s.user.role == 'accountant' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
-                                {% else %}bg-indigo-500/20 text-indigo-400 border border-indigo-500/30{% endif %}">
-                                {{ s.user.get_role_display }}
+                                {% if s.role == 'accountant' %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
+                                {% elif s.role == 'receptionist' %}bg-indigo-500/20 text-indigo-400 border border-indigo-500/30
+                                {% else %}bg-purple-500/20 text-purple-300 border border-purple-500/30{% endif %}">
+                                {{ s.role|capfirst }}
                             </span>
                         </td>
                         <td class="p-3">
@@ -185,9 +186,10 @@
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1">Staff Role</label>
-                    <select name="role" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs font-medium">
+                    <select name="role" id="staffRoleSelect" onchange="toggleCustomRoleInput()" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs font-medium">
                         <option value="receptionist">Front Desk Receptionist</option>
                         <option value="accountant">Finance / Accountant</option>
+                        <option value="other">Others (Specify Custom Role)</option>
                     </select>
                 </div>
 
@@ -195,6 +197,12 @@
                     <label class="block text-xs font-bold text-slate-400 mb-1">Base Salary (ETB)</label>
                     <input type="number" step="0.01" name="base_salary" value="0.00" placeholder="e.g. 8500.00" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-emerald-400 font-extrabold text-xs">
                 </div>
+            </div>
+
+            <!-- Custom Role Input Field -->
+            <div id="customRoleContainer" class="hidden">
+                <label class="block text-xs font-bold text-amber-400 mb-1">Specify Custom Role Title</label>
+                <input type="text" name="custom_role" id="customRoleInput" placeholder="e.g. Cleaner, Security Guard, Housekeeper, Chef, Maintenance" class="w-full bg-slate-950 border border-amber-500/50 rounded-xl px-3 py-2 text-amber-300 font-bold text-xs">
             </div>
 
             <div>
@@ -213,4 +221,19 @@
         </form>
     </div>
 </div>
+
+<script>
+function toggleCustomRoleInput() {
+    const sel = document.getElementById('staffRoleSelect');
+    const container = document.getElementById('customRoleContainer');
+    const input = document.getElementById('customRoleInput');
+    if (sel && sel.value === 'other') {
+        container.classList.remove('hidden');
+        input.setAttribute('required', 'required');
+    } else {
+        container.classList.add('hidden');
+        input.removeAttribute('required');
+    }
+}
+</script>
 {% endblock %}

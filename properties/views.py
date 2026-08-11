@@ -120,9 +120,17 @@ def manage_staff(request):
             username = request.POST.get('username')
             password = request.POST.get('password')
             email = request.POST.get('email', '')
-            role = request.POST.get('role', 'receptionist')
+            role_select = request.POST.get('role', 'receptionist')
+            custom_role = request.POST.get('custom_role', '').strip()
             property_id = request.POST.get('property_id')
             salary_val = Decimal(request.POST.get('base_salary', '0.00'))
+
+            if role_select == 'other' and custom_role:
+                assigned_role = custom_role
+                user_system_role = 'receptionist'
+            else:
+                assigned_role = role_select
+                user_system_role = role_select if role_select in ['receptionist', 'accountant'] else 'receptionist'
 
             target_prop = get_object_or_404(Property, id=property_id)
             if not request.user.is_admin and target_prop.investor != request.user:
@@ -137,18 +145,18 @@ def manage_staff(request):
                 username=username,
                 password=password,
                 email=email,
-                role=role
+                role=user_system_role
             )
 
             PropertyStaff.objects.create(
                 property=target_prop,
                 user=new_user,
-                role=role,
+                role=assigned_role,
                 base_salary=salary_val,
                 is_active=True
             )
 
-            messages.success(request, f"Created {new_user.get_role_display()} account for {new_user.username} with Base Salary: {salary_val} ETB.")
+            messages.success(request, f"Created staff account for '{new_user.username}' as '{assigned_role}' with Base Salary: {salary_val} ETB.")
             return redirect('properties:staff')
 
         elif action == 'update_salary':

@@ -56,6 +56,11 @@ def finance_dashboard(request):
     payroll_taxes = payrolls.aggregate(Sum('tax_deduction'))['tax_deduction__sum'] or Decimal('0.00')
     total_tax_liability = estimated_vat + payroll_taxes
 
+    # Salary commitments and payroll totals
+    staff_commitments = PropertyStaff.objects.filter(property=prop, is_active=True)
+    total_salary_commitment = staff_commitments.aggregate(Sum('base_salary'))['base_salary__sum'] or Decimal('0.00')
+    total_payroll_paid = payrolls.filter(status='paid').aggregate(Sum('net_salary'))['net_salary__sum'] or Decimal('0.00')
+
     return render(request, 'finance/dashboard.html', {
         'property': prop,
         'total_revenue': total_revenue,
@@ -65,6 +70,8 @@ def finance_dashboard(request):
         'estimated_vat': estimated_vat,
         'payroll_taxes': payroll_taxes,
         'total_tax_liability': total_tax_liability,
+        'total_salary_commitment': total_salary_commitment,
+        'total_payroll_paid': total_payroll_paid,
         'recent_expenses': expenses[:5],
         'recent_payrolls': payrolls[:5],
         'today_attendances': attendances,

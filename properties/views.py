@@ -85,7 +85,7 @@ def manage_staff(request):
         properties = Property.objects.filter(investor=request.user, is_active=True)
         staff_members = PropertyStaff.objects.filter(property__investor=request.user).select_related('property', 'user')
 
-    receptionists = CustomUser.objects.filter(role='receptionist')
+    receptionists = CustomUser.objects.filter(role__in=['receptionist', 'accountant'])
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -94,7 +94,7 @@ def manage_staff(request):
             user_id = request.POST.get('user_id')
             property_id = request.POST.get('property_id')
             
-            target_user = get_object_or_404(CustomUser, id=user_id, role='receptionist')
+            target_user = get_object_or_404(CustomUser, id=user_id, role__in=['receptionist', 'accountant'])
             target_prop = get_object_or_404(Property, id=property_id)
             
             if not request.user.is_admin and target_prop.investor != request.user:
@@ -104,19 +104,21 @@ def manage_staff(request):
             staff_obj, created = PropertyStaff.objects.get_or_create(
                 property=target_prop,
                 user=target_user,
-                defaults={'role': 'receptionist', 'is_active': True}
+                defaults={'role': target_user.role, 'is_active': True}
             )
             if not created:
                 staff_obj.is_active = True
+                staff_obj.role = target_user.role
                 staff_obj.save()
 
-            messages.success(request, f"Receptionist {target_user.username} assigned to {target_prop.property_name}.")
+            messages.success(request, f"Staff member {target_user.username} ({target_user.get_role_display()}) assigned to {target_prop.property_name}.")
             return redirect('properties:staff')
 
         elif action == 'create_new':
             username = request.POST.get('username')
             password = request.POST.get('password')
             email = request.POST.get('email', '')
+            role = request.POST.get('role', 'receptionist')
             property_id = request.POST.get('property_id')
 
             target_prop = get_object_or_404(Property, id=property_id)
@@ -132,17 +134,17 @@ def manage_staff(request):
                 username=username,
                 password=password,
                 email=email,
-                role='receptionist'
+                role=role
             )
 
             PropertyStaff.objects.create(
                 property=target_prop,
                 user=new_user,
-                role='receptionist',
+                role=role,
                 is_active=True
             )
 
-            messages.success(request, f"Created new Receptionist '{username}' and assigned to {target_prop.property_name}!")
+            messages.success(request, f"Created {new_user.get_role_display()} account for {new_user.username} and assigned to {target_prop.property_name}.")
             return redirect('properties:staff')
 
     return render(request, 'properties/staff_management.html', {

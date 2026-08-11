@@ -153,6 +153,14 @@
             </div>
 
             <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">Staff Role</label>
+                <select name="role" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs font-medium">
+                    <option value="receptionist">Front Desk Receptionist</option>
+                    <option value="accountant">Finance / Accountant</option>
+                </select>
+            </div>
+
+            <div>
                 <label class="block text-xs font-bold text-slate-400 mb-1">Assign to Property</label>
                 <select name="property_id" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs">
                     {% for p in properties %}

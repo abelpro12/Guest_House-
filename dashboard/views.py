@@ -23,6 +23,8 @@ def index_view(request):
         return admin_dashboard(request)
     elif user.is_investor:
         return investor_dashboard(request)
+    elif user.is_accountant:
+        return redirect('finance:dashboard')
     elif user.is_receptionist:
         return receptionist_dashboard(request)
     elif user.is_guest:

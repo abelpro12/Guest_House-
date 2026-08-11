@@ -2,12 +2,14 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum, Q
+from django.core.paginator import Paginator
 from decimal import Decimal
 from datetime import date
 from .models import Expense, StaffPayroll, StaffAttendance
 from properties.models import Property, PropertyStaff
 from billing.models import Invoice
 from accounts.models import CustomUser
+from config.permissions import investor_or_admin_required, staff_required
 
 def get_current_property(request):
     prop_id = request.GET.get('property_id') or request.session.get('current_property_id')
@@ -97,7 +99,6 @@ def finance_dashboard(request):
             'profit': m_profit,
             'is_selected': (m_year == selected_year and m_month == selected_month)
         })
-        
         prev_month_end = curr - timedelta(days=1)
         curr = prev_month_end.replace(day=1)
 
@@ -130,24 +131,26 @@ def finance_dashboard(request):
 
 
 @login_required
+@investor_or_admin_required
 def expense_list(request):
-    if not (request.user.is_accountant or request.user.is_investor or request.user.is_admin):
-        messages.error(request, "Access restricted.")
-        return redirect('dashboard:index')
-
     prop = get_current_property(request)
     category_filter = request.GET.get('category', '')
-    expenses = Expense.objects.filter(property=prop).order_by('-expense_date')
+    expenses_qs = Expense.objects.filter(property=prop).order_by('-expense_date')
 
     if category_filter:
-        expenses = expenses.filter(category=category_filter)
+        expenses_qs = expenses_qs.filter(category=category_filter)
+
+    paginator = Paginator(expenses_qs, 25)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
 
     categories = Expense.CATEGORY_CHOICES
     payment_methods = Expense.PAYMENT_METHOD_CHOICES
 
     return render(request, 'finance/expense_list.html', {
         'property': prop,
-        'expenses': expenses,
+        'expenses': page_obj,
+        'page_obj': page_obj,
         'categories': categories,
         'payment_methods': payment_methods,
         'category_filter': category_filter,
@@ -155,21 +158,18 @@ def expense_list(request):
 
 
 @login_required
+@investor_or_admin_required
 def expense_create(request):
-    if not (request.user.is_accountant or request.user.is_investor or request.user.is_admin):
-        messages.error(request, "Access restricted.")
-        return redirect('dashboard:index')
-
     if request.method == 'POST':
         prop = get_current_property(request)
-        title = request.POST.get('title')
+        title = request.POST.get('title', '').strip()
         category = request.POST.get('category')
         amount = request.POST.get('amount')
         expense_date = request.POST.get('expense_date') or date.today()
-        paid_to = request.POST.get('paid_to')
+        paid_to = request.POST.get('paid_to', '').strip()
         payment_method = request.POST.get('payment_method', 'cash')
-        receipt_ref = request.POST.get('receipt_reference')
-        notes = request.POST.get('notes')
+        receipt_ref = request.POST.get('receipt_reference', '').strip()
+        notes = request.POST.get('notes', '').strip()
 
         Expense.objects.create(
             property=prop,
@@ -190,20 +190,21 @@ def expense_create(request):
 
 
 @login_required
+@investor_or_admin_required
 def payroll_list(request):
-    if not (request.user.is_accountant or request.user.is_investor or request.user.is_admin):
-        messages.error(request, "Access restricted.")
-        return redirect('dashboard:index')
-
     prop = get_current_property(request)
-    payrolls = StaffPayroll.objects.filter(property=prop).order_by('-created_at')
+    payrolls_qs = StaffPayroll.objects.filter(property=prop).order_by('-created_at')
     
-    # Get staff list for modal
+    paginator = Paginator(payrolls_qs, 25)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
     staff_assignments = PropertyStaff.objects.filter(property=prop).select_related('user')
 
     return render(request, 'finance/payroll_list.html', {
         'property': prop,
-        'payrolls': payrolls,
+        'payrolls': page_obj,
+        'page_obj': page_obj,
         'staff_assignments': staff_assignments,
     })
 

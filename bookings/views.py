@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.db import transaction
 from django.utils import timezone
 from django.http import JsonResponse
+from django.core.paginator import Paginator
 
 from .models import Booking
 from rooms.models import Room
@@ -14,26 +15,34 @@ from billing.models import Invoice, InvoiceItem
 from payments.models import Transaction
 from receipts.models import Receipt
 from audit.models import AuditLog
+from config.permissions import staff_required
 
 @login_required
+@staff_required
 def booking_list(request):
     prop = getattr(request, 'current_property', None)
     if not prop:
         messages.error(request, "Please select a property.")
         return redirect('properties:list')
 
-    bookings = Booking.objects.filter(property=prop).select_related('room', 'guest').order_by('-created_at')
+    bookings_qs = Booking.objects.filter(property=prop).select_related('room', 'guest').order_by('-created_at')
     
     status_filter = request.GET.get('status')
     if status_filter:
-        bookings = bookings.filter(status=status_filter)
+        bookings_qs = bookings_qs.filter(status=status_filter)
+
+    paginator = Paginator(bookings_qs, 20)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
 
     return render(request, 'bookings/booking_list.html', {
-        'bookings': bookings,
+        'bookings': page_obj,
+        'page_obj': page_obj,
         'current_status': status_filter
     })
 
 @login_required
+@staff_required
 def booking_create(request):
     prop = getattr(request, 'current_property', None)
     if not prop:
@@ -51,6 +60,7 @@ def booking_create(request):
         num_guests = int(request.POST.get('number_of_guests', 1))
         initial_payment = Decimal(request.POST.get('initial_payment', '0.00'))
         payment_method = request.POST.get('payment_method', 'cash')
+        special_requests = request.POST.get('special_requests', '').strip()
 
         room = get_object_or_404(Room, id=room_id, property=prop)
         guest = get_object_or_404(Guest, id=guest_id)
@@ -77,6 +87,7 @@ def booking_create(request):
                 number_of_guests=num_guests,
                 nightly_rate=room.price_per_night,
                 amount_paid=initial_payment,
+                special_requests=special_requests,
                 status='confirmed',
                 created_by=request.user
             )
@@ -153,6 +164,7 @@ def booking_detail(request, booking_id):
 
 
 @login_required
+@staff_required
 def quick_check_in(request, booking_id=None):
     """Executes Quick Check-In workflow atomically."""
     prop = getattr(request, 'current_property', None)
@@ -250,6 +262,7 @@ def quick_check_in(request, booking_id=None):
 
 
 @login_required
+@staff_required
 def check_in_booking(request, booking_id):
     """Transitions a confirmed/pending reservation to checked_in."""
     booking = get_object_or_404(Booking, id=booking_id)
@@ -280,6 +293,7 @@ def check_in_booking(request, booking_id):
 
 
 @login_required
+@staff_required
 def perform_check_out(request, booking_id):
     """Executes Check-Out workflow atomically."""
     booking = get_object_or_404(Booking, id=booking_id)
@@ -372,4 +386,65 @@ def perform_check_out(request, booking_id):
     return render(request, 'bookings/checkout_confirm.html', {
         'booking': booking,
         'invoice': invoice
+    })
+
+
+@login_required
+@staff_required
+def reservation_calendar(request):
+    """Renders a visual 14-day Gantt calendar view of room availability and bookings."""
+    prop = getattr(request, 'current_property', None)
+    if not prop:
+        messages.error(request, "Please select a property.")
+        return redirect('properties:list')
+
+    start_date_str = request.GET.get('start_date')
+    if start_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            start_date = date.today()
+    else:
+        start_date = date.today()
+
+    days_count = 14
+    date_list = [start_date + timedelta(days=i) for i in range(days_count)]
+    end_date = date_list[-1]
+
+    rooms = Room.objects.filter(property=prop, is_active=True).order_by('room_number')
+    bookings = Booking.objects.filter(
+        property=prop,
+        status__in=['confirmed', 'checked_in'],
+        check_in_date__lte=end_date,
+        expected_check_out__gte=start_date
+    ).select_related('guest', 'room')
+
+    # Build matrix
+    calendar_matrix = []
+    for room in rooms:
+        room_row = {
+            'room': room,
+            'days': []
+        }
+        for d in date_list:
+            # Find overlapping booking for this room on date d
+            active_b = None
+            for b in bookings:
+                if b.room_id == room.id and b.check_in_date <= d < b.expected_check_out:
+                    active_b = b
+                    break
+            room_row['days'].append({
+                'date': d,
+                'booking': active_b,
+                'is_today': (d == date.today())
+            })
+        calendar_matrix.append(room_row)
+
+    return render(request, 'bookings/calendar.html', {
+        'property': prop,
+        'start_date': start_date,
+        'date_list': date_list,
+        'calendar_matrix': calendar_matrix,
+        'prev_date': start_date - timedelta(days=7),
+        'next_date': start_date + timedelta(days=7),
     })

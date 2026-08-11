@@ -12,7 +12,10 @@ from bookings.models import Booking
 from payments.models import Transaction
 from rooms.models import Room
 
+from config.permissions import investor_or_admin_required
+
 @login_required
+@investor_or_admin_required
 def reports_index(request):
     prop = getattr(request, 'current_property', None)
     if not prop:
@@ -62,6 +65,7 @@ def reports_index(request):
 
 
 @login_required
+@investor_or_admin_required
 def export_csv(request):
     prop = getattr(request, 'current_property', None)
     response = HttpResponse(content_type='text/csv')
@@ -86,6 +90,7 @@ def export_csv(request):
 
 
 @login_required
+@investor_or_admin_required
 def export_excel(request):
     prop = getattr(request, 'current_property', None)
     try:

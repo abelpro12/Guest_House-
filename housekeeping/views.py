@@ -2,22 +2,31 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.core.paginator import Paginator
 from .models import HousekeepingTask
 from rooms.models import Room
 from audit.models import AuditLog
+from config.permissions import staff_required
 
 @login_required
+@staff_required
 def housekeeping_list(request):
     prop = getattr(request, 'current_property', None)
-    tasks = HousekeepingTask.objects.filter(property=prop).select_related('room', 'assigned_to').order_by('-created_at') if prop else HousekeepingTask.objects.none()
+    tasks_qs = HousekeepingTask.objects.filter(property=prop).select_related('room', 'assigned_to').order_by('-created_at') if prop else HousekeepingTask.objects.none()
     cleaning_rooms = Room.objects.filter(property=prop, status='cleaning') if prop else Room.objects.none()
     
+    paginator = Paginator(tasks_qs, 20)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
     return render(request, 'housekeeping/task_list.html', {
-        'tasks': tasks,
+        'tasks': page_obj,
+        'page_obj': page_obj,
         'cleaning_rooms': cleaning_rooms
     })
 
 @login_required
+@staff_required
 def task_create(request):
     prop = getattr(request, 'current_property', None)
     if not prop:
@@ -26,7 +35,7 @@ def task_create(request):
 
     if request.method == 'POST':
         room_id = request.POST.get('room_id')
-        description = request.POST.get('task_description')
+        description = request.POST.get('task_description', '').strip()
         priority = request.POST.get('priority', 'medium')
 
         room = get_object_or_404(Room, id=room_id, property=prop)
@@ -50,6 +59,7 @@ def task_create(request):
     return render(request, 'housekeeping/task_form.html', {'rooms': rooms})
 
 @login_required
+@staff_required
 def task_update_status(request, task_id):
     task = get_object_or_404(HousekeepingTask, id=task_id)
     if request.method == 'POST':

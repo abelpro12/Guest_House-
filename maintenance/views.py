@@ -3,17 +3,29 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.core.paginator import Paginator
 from .models import MaintenanceTicket
 from rooms.models import Room
 from audit.models import AuditLog
+from config.permissions import staff_required
 
 @login_required
+@staff_required
 def ticket_list(request):
     prop = getattr(request, 'current_property', None)
-    tickets = MaintenanceTicket.objects.filter(property=prop).select_related('room', 'reported_by').order_by('-created_at') if prop else MaintenanceTicket.objects.none()
-    return render(request, 'maintenance/ticket_list.html', {'tickets': tickets})
+    tickets_qs = MaintenanceTicket.objects.filter(property=prop).select_related('room', 'reported_by').order_by('-created_at') if prop else MaintenanceTicket.objects.none()
+    
+    paginator = Paginator(tickets_qs, 20)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'maintenance/ticket_list.html', {
+        'tickets': page_obj,
+        'page_obj': page_obj
+    })
 
 @login_required
+@staff_required
 def ticket_create(request):
     prop = getattr(request, 'current_property', None)
     if not prop:
@@ -22,7 +34,7 @@ def ticket_create(request):
 
     if request.method == 'POST':
         room_id = request.POST.get('room_id')
-        description = request.POST.get('description')
+        description = request.POST.get('description', '').strip()
         priority = request.POST.get('priority', 'medium')
         cost = Decimal(request.POST.get('cost', '0.00'))
 
@@ -58,6 +70,7 @@ def ticket_create(request):
     return render(request, 'maintenance/ticket_form.html', {'rooms': rooms})
 
 @login_required
+@staff_required
 def ticket_update_status(request, ticket_id):
     ticket = get_object_or_404(MaintenanceTicket, id=ticket_id)
     if request.method == 'POST':

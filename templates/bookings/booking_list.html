@@ -16,10 +16,16 @@
             <a href="?status=checked_out" class="px-3 py-1.5 rounded-lg border {% if current_status == 'checked_out' %}bg-slate-800 text-slate-400 border-slate-700{% else %}bg-slate-900 text-slate-400 border-slate-800{% endif %}">Out</a>
         </div>
 
-        <a href="{% url 'bookings:create' %}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-1.5 w-full sm:w-auto justify-center">
-            <i class="fa-solid fa-plus"></i>
-            <span>New Reservation</span>
-        </a>
+        <div class="flex items-center space-x-2 w-full sm:w-auto">
+            <a href="{% url 'bookings:calendar' %}" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-400 font-bold text-xs rounded-xl border border-indigo-500/30 shadow-md flex items-center space-x-1.5 flex-1 sm:flex-initial justify-center">
+                <i class="fa-solid fa-calendar-days text-indigo-400"></i>
+                <span>Calendar Grid</span>
+            </a>
+            <a href="{% url 'bookings:create' %}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-1.5 flex-1 sm:flex-initial justify-center">
+                <i class="fa-solid fa-plus"></i>
+                <span>New Reservation</span>
+            </a>
+        </div>
     </div>
 
     <!-- Desktop Table / Mobile Cards wrapper -->

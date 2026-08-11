@@ -30,10 +30,19 @@ class Booking(models.Model):
     amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    special_requests = models.TextField(blank=True, null=True, help_text="Special requests or internal booking notes")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['property', 'status']),
+            models.Index(fields=['room', 'check_in_date', 'expected_check_out']),
+            models.Index(fields=['booking_reference']),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.booking_reference:

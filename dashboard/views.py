@@ -99,6 +99,20 @@ def investor_dashboard(request):
 
     payment_breakdown = Transaction.objects.filter(property=prop, transaction_status='completed').values('payment_method').annotate(total=Sum('amount'))
 
+    # 7-day revenue trend calculation for Chart.js
+    revenue_chart_labels = []
+    revenue_chart_data = []
+    for i in range(6, -1, -1):
+        day_date = today - timedelta(days=i)
+        day_str = day_date.strftime('%b %d')
+        day_rev = Transaction.objects.filter(
+            property=prop,
+            transaction_status='completed',
+            timestamp__date=day_date
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        revenue_chart_labels.append(day_str)
+        revenue_chart_data.append(float(day_rev))
+
     recent_shifts = Shift.objects.filter(property=prop).order_by('-start_time')[:10]
     audit_logs = AuditLog.objects.filter(property=prop).order_by('-timestamp')[:20]
     subscription = getattr(prop, 'subscription', None)
@@ -112,6 +126,8 @@ def investor_dashboard(request):
         'occupied_rooms': occupied_rooms,
         'occupancy_rate': occupancy_rate,
         'payment_breakdown': payment_breakdown,
+        'revenue_chart_labels': revenue_chart_labels,
+        'revenue_chart_data': revenue_chart_data,
         'recent_shifts': recent_shifts,
         'audit_logs': audit_logs,
         'subscription': subscription

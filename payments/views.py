@@ -3,25 +3,37 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
+from django.core.paginator import Paginator
 from .models import Transaction
 from bookings.models import Booking
 from billing.models import Invoice
 from receipts.models import Receipt
 from audit.models import AuditLog
+from config.permissions import staff_required, investor_or_admin_required
 
 @login_required
+@staff_required
 def transaction_list(request):
     prop = getattr(request, 'current_property', None)
-    transactions = Transaction.objects.filter(property=prop).order_by('-timestamp') if prop else Transaction.objects.none()
-    return render(request, 'payments/transaction_list.html', {'transactions': transactions})
+    tx_qs = Transaction.objects.filter(property=prop).order_by('-timestamp') if prop else Transaction.objects.none()
+    
+    paginator = Paginator(tx_qs, 25)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'payments/transaction_list.html', {
+        'transactions': page_obj,
+        'page_obj': page_obj
+    })
 
 @login_required
+@staff_required
 def record_payment(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id)
     if request.method == 'POST':
         amount = Decimal(request.POST.get('amount', '0.00'))
         method = request.POST.get('payment_method', 'cash')
-        ref_note = request.POST.get('reference_id', '')
+        ref_note = request.POST.get('reference_id', '').strip()
 
         if amount <= 0:
             messages.error(request, "Payment amount must be greater than zero.")
@@ -71,14 +83,12 @@ def record_payment(request, booking_id):
     return redirect('bookings:detail', booking_id=booking.id)
 
 @login_required
+@investor_or_admin_required
 def void_transaction(request, transaction_id):
     tx = get_object_or_404(Transaction, id=transaction_id)
-    if not (request.user.is_admin or request.user.is_investor):
-        messages.error(request, "Permission denied. Only Admin or Investor can void transactions.")
-        return redirect('payments:list')
 
     if request.method == 'POST':
-        reason = request.POST.get('reason', 'User requested void')
+        reason = request.POST.get('reason', 'User requested void').strip()
         with transaction.atomic():
             tx.transaction_status = 'voided'
             tx.save()

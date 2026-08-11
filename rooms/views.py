@@ -4,31 +4,40 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db import transaction
+from django.core.paginator import Paginator
 from .models import Room, RoomType
 from properties.models import Property
+from config.permissions import staff_required, investor_or_admin_required
 
 @login_required
+@staff_required
 def room_list(request):
     prop = getattr(request, 'current_property', None)
     if not prop:
         messages.error(request, "Please select a property first.")
         return redirect('properties:list')
 
-    rooms = Room.objects.filter(property=prop, is_active=True)
+    rooms_qs = Room.objects.filter(property=prop, is_active=True).select_related('room_type')
     room_types = RoomType.objects.all()
 
     # Filter params
     status_filter = request.GET.get('status')
     if status_filter:
-        rooms = rooms.filter(status=status_filter)
+        rooms_qs = rooms_qs.filter(status=status_filter)
+
+    paginator = Paginator(rooms_qs, 24)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
 
     return render(request, 'rooms/room_list.html', {
-        'rooms': rooms,
+        'rooms': page_obj,
+        'page_obj': page_obj,
         'room_types': room_types,
         'current_status': status_filter
     })
 
 @login_required
+@investor_or_admin_required
 def room_create(request):
     prop = getattr(request, 'current_property', None)
     if not prop:
@@ -36,10 +45,14 @@ def room_create(request):
         return redirect('properties:list')
 
     if request.method == 'POST':
-        room_number = request.POST.get('room_number')
+        room_number = request.POST.get('room_number', '').strip()
         room_type_id = request.POST.get('room_type_id')
         price_per_night = request.POST.get('price_per_night')
         status = request.POST.get('status', 'vacant')
+
+        if not room_number:
+            messages.error(request, "Room number is required.")
+            return redirect('rooms:list')
 
         if Room.objects.filter(property=prop, room_number=room_number).exists():
             messages.error(request, f"Room number '{room_number}' already exists for this property.")
@@ -51,7 +64,7 @@ def room_create(request):
             property=prop,
             room_number=room_number,
             room_type=room_type,
-            price_per_night=price_per_night or room_type.default_price,
+            price_per_night=Decimal(price_per_night) if price_per_night else room_type.default_price,
             status=status
         )
         messages.success(request, f"Room {room_number} created successfully.")
@@ -61,6 +74,7 @@ def room_create(request):
 
 
 @login_required
+@investor_or_admin_required
 def bulk_create_rooms(request):
     """Allows Super Admin or Investor to generate multiple rooms at once."""
     prop = getattr(request, 'current_property', None)
@@ -74,7 +88,6 @@ def bulk_create_rooms(request):
         start_number = int(request.POST.get('start_number', 1))
         count = int(request.POST.get('count', 1))
         price_per_night = request.POST.get('price_per_night')
-        floor = request.POST.get('floor', '')
 
         room_type = get_object_or_404(RoomType, id=room_type_id)
         price = Decimal(price_per_night) if price_per_night else room_type.default_price
@@ -110,6 +123,7 @@ def bulk_create_rooms(request):
 
 
 @login_required
+@staff_required
 def update_room_status(request, room_id):
     room = get_object_or_404(Room, id=room_id)
     if request.method == 'POST':

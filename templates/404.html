@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}404 — Page Not Found{% endblock %}
+{% block page_title %}Page Not Found{% endblock %}
+
+{% block content %}
+<div class="min-h-[60vh] flex items-center justify-center text-center p-6">
+    <div class="max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6">
+        <div class="w-20 h-20 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-3xl flex items-center justify-center text-4xl mx-auto shadow-inner">
+            <i class="fa-solid fa-compass-drafting"></i>
+        </div>
+
+        <div class="space-y-2">
+            <h1 class="text-4xl font-black text-white">404</h1>
+            <h2 class="text-lg font-bold text-slate-300">Room or Page Not Found</h2>
+            <p class="text-xs text-slate-400 leading-relaxed">
+                The requested URL or record could not be found. It may have been moved, deleted, or you might not have permission to view it.
+            </p>
+        </div>
+
+        <div class="pt-4 flex items-center justify-center gap-3">
+            <a href="{% url 'dashboard:index' %}" class="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center space-x-2">
+                <i class="fa-solid fa-house"></i>
+                <span>Return to Dashboard</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

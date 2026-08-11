@@ -12,6 +12,9 @@ class Property(models.Model):
         on_delete=models.CASCADE, 
         related_name='owned_properties'
     )
+    tin_number = models.CharField(max_length=50, blank=True, null=True, help_text="Tax Identification Number (TIN)")
+    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('15.00'), help_text="Value Added Tax (VAT) % e.g. 15.00")
+    tot_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'), help_text="Turnover Tax (TOT) % e.g. 2.00 or 10.00")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

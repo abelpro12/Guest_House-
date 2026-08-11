@@ -28,21 +28,32 @@ def receipt_pdf(request, receipt_id):
         from reportlab.lib import colors
 
         buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
         elements = []
         styles = getSampleStyleSheet()
 
         title_style = ParagraphStyle(
             'TitleStyle',
             parent=styles['Heading1'],
-            fontSize=20,
-            textColor=colors.HexColor('#1e293b'),
-            spaceAfter=10
+            fontSize=22,
+            textColor=colors.HexColor('#0f172a'),
+            spaceAfter=4
+        )
+
+        sub_style = ParagraphStyle(
+            'SubStyle',
+            parent=styles['Normal'],
+            fontSize=9,
+            textColor=colors.HexColor('#475569'),
+            spaceAfter=12
         )
 
         elements.append(Paragraph(f"<b>{receipt.property.property_name}</b>", title_style))
-        elements.append(Paragraph(f"{receipt.property.address} | Phone: {receipt.property.phone} | Email: {receipt.property.email}", styles['Normal']))
-        elements.append(Spacer(1, 15))
+        prop_info = f"{receipt.property.address} | Phone: {receipt.property.phone} | Email: {receipt.property.email}"
+        if receipt.property.tin_number:
+            prop_info += f" | TIN: {receipt.property.tin_number}"
+        elements.append(Paragraph(prop_info, sub_style))
+        elements.append(Spacer(1, 10))
 
         elements.append(Paragraph(f"<b>OFFICIAL PAYMENT RECEIPT</b> #{receipt.receipt_number}", styles['Heading2']))
         if receipt.is_voided:
@@ -56,29 +67,37 @@ def receipt_pdf(request, receipt_id):
             ["Room Number:", f"Room {receipt.booking.room.room_number}"],
             ["Booking Ref:", receipt.booking.booking_reference],
             ["Check-In Date:", str(receipt.booking.check_in_date)],
-            ["Expected Check-Out:", str(receipt.booking.expected_check_out)],
-            ["Amount Paid:", f"{receipt.amount_paid} ETB"],
+            ["Check-Out Date:", str(receipt.booking.expected_check_out)],
             ["Payment Method:", receipt.transaction.get_payment_method_display() if receipt.transaction else "Cash"],
+            ["Total Amount Paid:", f"<b>{receipt.amount_paid} ETB</b>"],
             ["Received By:", receipt.received_by.get_full_name() if receipt.received_by else "Staff"],
         ]
 
-        t = Table(data, colWidths=[150, 350])
+        if receipt.property.vat_rate > 0 or receipt.property.tot_rate > 0:
+            subtotal_val = round(receipt.amount_paid / Decimal(1 + (receipt.property.vat_rate + receipt.property.tot_rate) / 100), 2)
+            vat_val = round(subtotal_val * (receipt.property.vat_rate / 100), 2)
+            data.insert(8, ["Subtotal (Excl. Tax):", f"{subtotal_val} ETB"])
+            if receipt.property.vat_rate > 0:
+                data.insert(9, [f"VAT ({receipt.property.vat_rate}%):", f"{vat_val} ETB"])
+
+        t = Table(data, colWidths=[160, 360])
         t.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (0,-1), colors.HexColor('#f1f5f9')),
+            ('BACKGROUND', (0,0), (0,-1), colors.HexColor('#f8fafc')),
             ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor('#0f172a')),
             ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#cbd5e1')),
             ('PADDING', (0,0), (-1,-1), 6),
+            ('FONTSIZE', (0,0), (-1,-1), 10),
         ]))
 
         elements.append(t)
         elements.append(Spacer(1, 20))
-        elements.append(Paragraph("Thank you for staying with us!", styles['Italic']))
+        elements.append(Paragraph("Thank you for choosing our guest house!", styles['Italic']))
 
         doc.build(elements)
         buffer.seek(0)
 
         response = HttpResponse(buffer, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="Receipt_{receipt.receipt_number}.pdf"'
+        response['Content-Disposition'] = f'inline; filename="Receipt_{receipt.receipt_number}.pdf"'
         return response
 
     except Exception as e:

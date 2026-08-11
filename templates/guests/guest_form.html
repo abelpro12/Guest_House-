@@ -7,7 +7,7 @@
 <div class="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
     <h3 class="text-base font-bold text-white mb-6 border-b border-slate-800 pb-3">Guest Information</h3>
 
-    <form method="post" class="space-y-4 text-xs">
+    <form method="post" enctype="multipart/form-data" class="space-y-4 text-xs">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.GET.next }}">
 
@@ -41,6 +41,15 @@
                 <label class="block font-semibold text-slate-300 mb-1">ID Document Number</label>
                 <input type="text" name="id_document_number" value="{{ guest.id_document_number|default:'' }}" required placeholder="ID Number" class="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white">
             </div>
+        </div>
+
+        <!-- ID Photo Upload -->
+        <div>
+            <label class="block font-semibold text-slate-300 mb-1">Upload ID / Passport Scan (Optional)</label>
+            <input type="file" name="id_photo" accept="image/*,.pdf" class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600/20 file:text-indigo-300 hover:file:bg-indigo-600/30 cursor-pointer border border-slate-800 rounded-lg p-1 bg-slate-800/50">
+            {% if guest.id_photo %}
+                <p class="text-[11px] text-emerald-400 mt-1"><i class="fa-solid fa-paperclip mr-1"></i> Current File: <a href="{{ guest.id_photo.url }}" target="_blank" class="underline">View Attached Document</a></p>
+            {% endif %}
         </div>
 
         <div class="grid grid-cols-2 gap-4">

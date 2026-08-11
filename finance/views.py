@@ -31,19 +31,34 @@ def finance_dashboard(request):
         messages.warning(request, "No property found.")
         return redirect('dashboard:index')
 
-    expenses = Expense.objects.filter(property=prop).order_by('-expense_date')
-    payrolls = StaffPayroll.objects.filter(property=prop).order_by('-created_at')
+    # Selected Month Handling
+    from datetime import datetime
+    month_param = request.GET.get('month')
+    if month_param:
+        try:
+            selected_date = datetime.strptime(month_param, '%Y-%m').date()
+        except ValueError:
+            selected_date = date.today()
+    else:
+        selected_date = date.today()
+
+    selected_year = selected_date.year
+    selected_month = selected_date.month
+    selected_month_str = selected_date.strftime('%Y-%m')
+    month_name = selected_date.strftime('%B %Y')
+
+    # Filter transactions for selected month
+    expenses = Expense.objects.filter(property=prop, expense_date__year=selected_year, expense_date__month=selected_month).order_by('-expense_date')
+    payrolls = StaffPayroll.objects.filter(property=prop, created_at__year=selected_year, created_at__month=selected_month).order_by('-created_at')
+    invoices = Invoice.objects.filter(booking__property=prop, status='paid', created_at__year=selected_year, created_at__month=selected_month)
     attendances = StaffAttendance.objects.filter(property=prop, date=date.today())
 
-    # Revenue calculation from paid invoices
-    invoices = Invoice.objects.filter(booking__property=prop, status='paid')
+    # Revenue & Expenses calculations for selected month
     total_revenue = invoices.aggregate(Sum('total'))['total__sum'] or Decimal('0.00')
-
-    # Expense calculation
     total_expenses = expenses.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
     net_profit = total_revenue - total_expenses
 
-    # Category breakdown
+    # Category breakdown for selected month
     expenses_by_cat = expenses.values('category').annotate(cat_total=Sum('amount'))
     cat_names = dict(Expense.CATEGORY_CHOICES)
     cat_summary = [
@@ -51,18 +66,46 @@ def finance_dashboard(request):
         for item in expenses_by_cat
     ]
 
-    # Tax estimations
+    # Tax estimations for selected month
     estimated_vat = total_revenue * Decimal('0.15') # 15% VAT
     payroll_taxes = payrolls.aggregate(Sum('tax_deduction'))['tax_deduction__sum'] or Decimal('0.00')
     total_tax_liability = estimated_vat + payroll_taxes
 
-    # Salary commitments and payroll totals
+    # Salary commitments & paid payrolls for selected month
     staff_commitments = PropertyStaff.objects.filter(property=prop, is_active=True)
     total_salary_commitment = staff_commitments.aggregate(Sum('base_salary'))['base_salary__sum'] or Decimal('0.00')
     total_payroll_paid = payrolls.filter(status='paid').aggregate(Sum('net_salary'))['net_salary__sum'] or Decimal('0.00')
 
+    # Build 6-Month Comparison Matrix
+    from datetime import timedelta
+    monthly_comparison = []
+    curr = date.today().replace(day=1)
+    for _ in range(6):
+        m_year = curr.year
+        m_month = curr.month
+        m_label = curr.strftime('%b %Y')
+        
+        m_rev = Invoice.objects.filter(booking__property=prop, status='paid', created_at__year=m_year, created_at__month=m_month).aggregate(Sum('total'))['total__sum'] or Decimal('0.00')
+        m_exp = Expense.objects.filter(property=prop, expense_date__year=m_year, expense_date__month=m_month).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        m_profit = m_rev - m_exp
+        
+        monthly_comparison.append({
+            'month_key': curr.strftime('%Y-%m'),
+            'month_label': m_label,
+            'revenue': m_rev,
+            'expenses': m_exp,
+            'profit': m_profit,
+            'is_selected': (m_year == selected_year and m_month == selected_month)
+        })
+        
+        prev_month_end = curr - timedelta(days=1)
+        curr = prev_month_end.replace(day=1)
+
     return render(request, 'finance/dashboard.html', {
         'property': prop,
+        'month_name': month_name,
+        'selected_month_str': selected_month_str,
+        'monthly_comparison': monthly_comparison,
         'total_revenue': total_revenue,
         'total_expenses': total_expenses,
         'net_profit': net_profit,

@@ -182,3 +182,49 @@ def guest_portal(request):
         'bookings': bookings,
         'active_booking': active_booking
     })
+
+
+@login_required
+def global_search(request):
+    """Searches Bookings, Guests, and Rooms simultaneously."""
+    query = request.GET.get('q', '').strip()
+    prop = getattr(request, 'current_property', None)
+
+    if not query:
+        return redirect('dashboard:index')
+
+    bookings = Booking.objects.none()
+    guests = Guest.objects.none()
+    rooms = Room.objects.none()
+
+    if prop:
+        bookings = Booking.objects.filter(
+            property=prop
+        ).filter(
+            Q(booking_reference__icontains=query) |
+            Q(guest__full_name__icontains=query) |
+            Q(guest__phone_number__icontains=query) |
+            Q(room__room_number__icontains=query)
+        ).select_related('guest', 'room')[:20]
+
+        guests = Guest.objects.filter(
+            Q(property=prop) | Q(bookings__property=prop) | Q(property__isnull=True)
+        ).filter(
+            Q(full_name__icontains=query) |
+            Q(phone_number__icontains=query) |
+            Q(id_document_number__icontains=query) |
+            Q(email__icontains=query)
+        ).distinct()[:20]
+
+        rooms = Room.objects.filter(
+            property=prop,
+            room_number__icontains=query
+        ).select_related('room_type')[:20]
+
+    return render(request, 'dashboard/search_results.html', {
+        'query': query,
+        'bookings': bookings,
+        'guests': guests,
+        'rooms': rooms,
+        'property': prop
+    })

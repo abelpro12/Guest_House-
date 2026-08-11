@@ -9,4 +9,5 @@ urlpatterns = [
     path('investor/', views.investor_dashboard, name='investor'),
     path('admin-panel/', views.admin_dashboard, name='admin'),
     path('guest-portal/', views.guest_portal, name='guest_portal'),
+    path('search/', views.global_search, name='search'),
 ]

@@ -448,3 +448,91 @@ def reservation_calendar(request):
         'prev_date': start_date - timedelta(days=7),
         'next_date': start_date + timedelta(days=7),
     })
+
+
+@login_required
+@staff_required
+def extend_booking(request, booking_id):
+    """Extends stay by additional days, updating total amount and invoice line items atomically."""
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    if request.method == 'POST':
+        additional_days = int(request.POST.get('additional_days', 1))
+
+        if additional_days <= 0:
+            messages.error(request, "Additional days must be greater than zero.")
+            return redirect('bookings:detail', booking_id=booking.id)
+
+        new_check_out = booking.expected_check_out + timedelta(days=additional_days)
+
+        # Overlap Validation for extended dates
+        if Booking.check_overlap(booking.room, booking.expected_check_out, new_check_out, exclude_booking_id=booking.id):
+            messages.error(request, f"Room {booking.room.room_number} is not available for extension until {new_check_out}.")
+            return redirect('bookings:detail', booking_id=booking.id)
+
+        with transaction.atomic():
+            booking.expected_check_out = new_check_out
+            booking.save()
+
+            invoice = getattr(booking, 'invoice', None)
+            if invoice:
+                add_charge = booking.nightly_rate * Decimal(additional_days)
+                InvoiceItem.objects.create(
+                    invoice=invoice,
+                    description=f"Extension ({additional_days} night(s) to {new_check_out})",
+                    quantity=additional_days,
+                    unit_price=booking.nightly_rate,
+                    total=add_charge
+                )
+                invoice.subtotal += add_charge
+                invoice.total = invoice.subtotal - invoice.discount + invoice.tax
+                invoice.balance = invoice.total - invoice.amount_paid
+                invoice.status = 'paid' if invoice.balance <= 0 else 'partially_paid'
+                invoice.save()
+
+                booking.total_amount = invoice.total
+                booking.balance = invoice.balance
+                booking.save()
+
+            AuditLog.log_action(
+                user=request.user,
+                property=booking.property,
+                action='extend_booking',
+                model_name='Booking',
+                object_id=str(booking.id),
+                new_value=f"Extended stay by {additional_days} night(s) until {new_check_out}"
+            )
+
+        messages.success(request, f"Stay extended by {additional_days} night(s) until {new_check_out}!")
+    return redirect('bookings:detail', booking_id=booking.id)
+
+
+@login_required
+@staff_required
+def cancel_booking(request, booking_id):
+    """Cancels a reservation and frees up the room."""
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    if request.method == 'POST':
+        reason = request.POST.get('reason', 'Cancelled by user').strip()
+
+        with transaction.atomic():
+            booking.status = 'cancelled'
+            booking.save()
+
+            # Restore room status if currently assigned
+            if booking.room.status == 'occupied':
+                booking.room.status = 'vacant'
+                booking.room.save()
+
+            AuditLog.log_action(
+                user=request.user,
+                property=booking.property,
+                action='cancel_booking',
+                model_name='Booking',
+                object_id=str(booking.id),
+                new_value=f"Cancelled booking {booking.booking_reference} - Reason: {reason}"
+            )
+
+        messages.warning(request, f"Booking {booking.booking_reference} has been cancelled.")
+    return redirect('bookings:detail', booking_id=booking.id)

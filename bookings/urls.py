@@ -11,4 +11,6 @@ urlpatterns = [
     path('quick-check-in/', views.quick_check_in, name='quick_check_in'),
     path('<int:booking_id>/check-in/', views.check_in_booking, name='check_in'),
     path('<int:booking_id>/check-out/', views.perform_check_out, name='check_out'),
+    path('<int:booking_id>/extend/', views.extend_booking, name='extend'),
+    path('<int:booking_id>/cancel/', views.cancel_booking, name='cancel'),
 ]

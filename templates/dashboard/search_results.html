@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Results for "{{ query }}"{% endblock %}
+{% block page_title %}Global Search Results{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Search Header Bar -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <form method="GET" action="{% url 'dashboard:search' %}" class="flex items-center space-x-3">
+            <div class="relative flex-1">
+                <input type="text" name="q" value="{{ query }}" placeholder="Search bookings by ref, guests by name/phone/ID, or room numbers..." class="w-full pl-11 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-indigo-500">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            </div>
+            <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all">
+                Search
+            </button>
+        </form>
+    </div>
+
+    <!-- Bookings Results -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <h3 class="text-sm font-bold text-white flex items-center space-x-2 border-b border-slate-800 pb-3">
+            <i class="fa-solid fa-calendar-check text-indigo-400"></i>
+            <span>Matching Bookings ({{ bookings.count }})</span>
+        </h3>
+        {% if bookings %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for b in bookings %}
+            <a href="{% url 'bookings:detail' b.id %}" class="p-4 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-xl block transition-all">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="font-extrabold text-white text-xs">{{ b.booking_reference }}</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {% if b.status == 'checked_in' %}bg-emerald-500/20 text-emerald-400{% else %}bg-indigo-500/20 text-indigo-400{% endif %}">{{ b.get_status_display }}</span>
+                </div>
+                <div class="text-xs text-slate-300 font-semibold">{{ b.guest.full_name }}</div>
+                <div class="text-[11px] text-slate-400 mt-1 flex justify-between">
+                    <span>Room {{ b.room.room_number }}</span>
+                    <span>{{ b.check_in_date }} → {{ b.expected_check_out }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-slate-500 text-xs text-center py-4">No matching bookings found.</div>
+        {% endif %}
+    </div>
+
+    <!-- Guest Results -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <h3 class="text-sm font-bold text-white flex items-center space-x-2 border-b border-slate-800 pb-3">
+            <i class="fa-solid fa-users text-emerald-400"></i>
+            <span>Matching Guests ({{ guests.count }})</span>
+        </h3>
+        {% if guests %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for g in guests %}
+            <a href="{% url 'guests:detail' g.id %}" class="p-4 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-xl block transition-all">
+                <div class="font-bold text-white text-xs mb-1">{{ g.full_name }}</div>
+                <div class="text-[11px] text-slate-400 flex items-center space-x-2">
+                    <i class="fa-solid fa-phone text-slate-500"></i>
+                    <span>{{ g.phone_number }}</span>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-1 flex items-center space-x-2">
+                    <i class="fa-solid fa-id-card text-slate-500"></i>
+                    <span>{{ g.get_id_document_type_display }}: {{ g.id_document_number }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-slate-500 text-xs text-center py-4">No matching guests found.</div>
+        {% endif %}
+    </div>
+
+    <!-- Room Results -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <h3 class="text-sm font-bold text-white flex items-center space-x-2 border-b border-slate-800 pb-3">
+            <i class="fa-solid fa-door-closed text-amber-400"></i>
+            <span>Matching Rooms ({{ rooms.count }})</span>
+        </h3>
+        {% if rooms %}
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {% for r in rooms %}
+            <div class="p-4 bg-slate-800/60 border border-slate-700/60 rounded-xl">
+                <div class="font-extrabold text-white text-sm">Room {{ r.room_number }}</div>
+                <div class="text-[11px] text-slate-400">{{ r.room_type.name }}</div>
+                <div class="mt-2 text-xs font-bold {% if r.status == 'vacant' %}text-emerald-400{% elif r.status == 'occupied' %}text-indigo-400{% else %}text-amber-400{% endif %} uppercase">
+                    {{ r.get_status_display }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-slate-500 text-xs text-center py-4">No matching rooms found.</div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

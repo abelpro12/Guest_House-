@@ -21,19 +21,28 @@
             <p class="text-xs text-slate-400 mt-1">Room #{{ booking.room.room_number }} ({{ booking.room.room_type.name }}) | Guest: {{ booking.guest.full_name }}</p>
         </div>
 
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center flex-wrap gap-2">
             {% if booking.status == 'confirmed' or booking.status == 'pending' %}
-            <a href="{% url 'bookings:check_in' booking_id=booking.id %}" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-1">
+            <a href="{% url 'bookings:check_in' booking_id=booking.id %}" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center space-x-1">
                 <i class="fa-solid fa-right-to-bracket text-sm"></i>
                 <span>Check-In Guest</span>
             </a>
-            <a href="{% url 'bookings:check_out' booking_id=booking.id %}" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-lg">
-                Proceed to Check-Out
+            {% endif %}
+
+            {% if booking.status == 'checked_in' or booking.status == 'confirmed' %}
+            <button onclick="document.getElementById('extendModal').classList.remove('hidden')" class="px-3.5 py-2 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 font-bold text-xs rounded-xl border border-indigo-500/40 shadow-lg flex items-center space-x-1">
+                <i class="fa-solid fa-calendar-plus text-xs"></i>
+                <span>Extend Stay</span>
+            </button>
+            <a href="{% url 'bookings:check_out' booking_id=booking.id %}" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-lg">
+                Check-Out
             </a>
-            {% elif booking.status == 'checked_in' %}
-            <a href="{% url 'bookings:check_out' booking_id=booking.id %}" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-lg">
-                Proceed to Check-Out
-            </a>
+            {% endif %}
+
+            {% if booking.status != 'cancelled' and booking.status != 'checked_out' %}
+            <button onclick="document.getElementById('cancelModal').classList.remove('hidden')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold text-xs rounded-xl border border-slate-700">
+                Cancel
+            </button>
             {% endif %}
         </div>
     </div>
@@ -176,6 +185,49 @@
                 {% endfor %}
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Modal: Extend Stay -->
+<div id="extendModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-sm font-bold text-white">Extend Stay — Room {{ booking.room.room_number }}</h3>
+            <button onclick="document.getElementById('extendModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        <form method="POST" action="{% url 'bookings:extend' booking_id=booking.id %}" class="space-y-4 text-xs">
+            {% csrf_token %}
+            <div>
+                <label class="block font-semibold text-slate-300 mb-1">Additional Night(s)</label>
+                <input type="number" name="additional_days" value="1" min="1" max="30" required class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white font-bold">
+                <p class="text-[11px] text-slate-400 mt-1">Nightly Rate: {{ booking.nightly_rate }} ETB. Total will be auto-updated.</p>
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button type="button" onclick="document.getElementById('extendModal').classList.add('hidden')" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg">Cancel</button>
+                <button type="submit" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow">Confirm Extension</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Cancel Reservation -->
+<div id="cancelModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 class="text-sm font-bold text-rose-400">Cancel Booking {{ booking.booking_reference }}</h3>
+            <button onclick="document.getElementById('cancelModal').classList.add('hidden')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        <form method="POST" action="{% url 'bookings:cancel' booking_id=booking.id %}" class="space-y-4 text-xs">
+            {% csrf_token %}
+            <div>
+                <label class="block font-semibold text-slate-300 mb-1">Reason for Cancellation</label>
+                <textarea name="reason" rows="2" required placeholder="e.g. Guest requested cancellation / No-show" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white"></textarea>
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button type="button" onclick="document.getElementById('cancelModal').classList.add('hidden')" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg">Keep Booking</button>
+                <button type="submit" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg shadow">Confirm Cancellation</button>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}
